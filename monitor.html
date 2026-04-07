@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Clientes - Calle 30</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #1a1a1a; color: white; overflow: hidden; font-family: 'Segoe UI', sans-serif; height: 100vh; margin: 0; }
+        .header-monitor { background-color: #0056b3; padding: 12px; text-align: center; border-bottom: 5px solid #ffc107; height: 70px; }
+        
+        .contenedor-principal { 
+            height: calc(100vh - 70px); 
+            padding: 10px 60px 40px 60px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            box-sizing: border-box;
+        }
+
+        .guia-card { 
+            background: #2d2d2d; 
+            padding: 0 35px; 
+            border-radius: 12px; 
+            border-left: 18px solid; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 18%; 
+            margin-bottom: 5px;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .status-pendiente { border-left-color: #0d6efd; }
+        .status-buscando { border-left-color: #ffc107; }
+        .status-encontrada { border-left-color: #198754; background: #1e3a2b; }
+        
+        .guia-numero { font-size: 3.5rem; font-weight: 900; color: #fff; }
+        .status-texto { font-size: 1.8rem; text-transform: uppercase; font-weight: bold; }
+        
+        .bg-listo { color: #2dfc89; }
+        .bg-buscando { color: #ffc107; }
+        .bg-fila { color: #5dade2; }
+
+        .indicador-paginas { position: absolute; top: 85px; right: 30px; font-size: 1rem; color: #ffc107; font-weight: bold; z-index: 10; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="header-monitor shadow">
+    <h1 class="fw-bold mb-0">ESTADO DE TU PEDIDO - CALLE 30</h1>
+</div>
+
+<div id="indicadorPagina" class="indicador-paginas"></div>
+
+<div class="contenedor-principal">
+    <div id="listaUnica" style="height: 100%; display: flex; flex-direction: column; justify-content: space-around;">
+        </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBzM3A6yc1nj858w9MWhIAz3b4T5QqtauQ",
+        authDomain: "picking-inter.firebaseapp.com",
+        projectId: "picking-inter",
+        storageBucket: "picking-inter.firebasestorage.app",
+        messagingSenderId: "444247400767",
+        appId: "1:444247400767:web:04c7e6beed0b55d158b38a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const MAX_FILAS = 5; 
+    let todasLasGuias = [];
+    let paginaActual = 0;
+
+    // Cambiar de página cada 8 segundos
+    setInterval(() => {
+        const totalPaginas = Math.ceil(todasLasGuias.length / MAX_FILAS);
+        if (totalPaginas > 1) {
+            paginaActual = (paginaActual + 1) % totalPaginas;
+            renderizar();
+        }
+    }, 8000);
+
+    // Revisar cada minuto si hay guías que deben ocultarse por tiempo
+    setInterval(() => {
+        renderizar();
+    }, 60000);
+
+    const q = query(collection(db, "guias"), where("archivado", "==", false));
+
+    onSnapshot(q, (snapshot) => {
+        const temp = [];
+        const ahora = new Date();
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // LÓGICA DE FILTRADO:
+            if (data.estado === 'encontrada' && data.finBusqueda) {
+                const fin = new Date(data.finBusqueda.seconds * 1000);
+                const diffMs = ahora - fin;
+                const diffMin = Math.floor(diffMs / 60000);
+
+                // Si tiene más de 30 minutos de finalizada, NO la agregamos al monitor
+                if (diffMin >= 30) return; 
+            }
+            
+            temp.push(data);
+        });
+
+        // Ordenar por prioridad de estado
+        temp.sort((a, b) => {
+            const peso = { 'encontrada': 1, 'buscando': 2, 'pendiente': 3 };
+            return peso[a.estado] - peso[b.estado];
+        });
+
+        todasLasGuias = temp;
+        if (paginaActual >= Math.ceil(todasLasGuias.length / MAX_FILAS)) paginaActual = 0;
+        renderizar();
+    });
+
+    function renderizar() {
+        const contenedor = document.getElementById('listaUnica');
+        const indicador = document.getElementById('indicadorPagina');
+        contenedor.innerHTML = "";
+
+        // Volvemos a filtrar en el render por si acaso el tiempo pasó mientras no hubo cambios en DB
+        const ahora = new Date();
+        const guiasFiltradas = todasLasGuias.filter(g => {
+            if (g.estado === 'encontrada' && g.finBusqueda) {
+                const fin = new Date(g.finBusqueda.seconds * 1000);
+                return (ahora - fin) / 60000 < 30;
+            }
+            return true;
+        });
+
+        const totalPaginas = Math.ceil(guiasFiltradas.length / MAX_FILAS);
+        const inicio = paginaActual * MAX_FILAS;
+        const visibles = guiasFiltradas.slice(inicio, inicio + MAX_FILAS);
+
+        indicador.innerText = totalPaginas > 1 ? `PÁGINA ${paginaActual + 1} DE ${totalPaginas}` : "";
+
+        if (visibles.length === 0) {
+            contenedor.innerHTML = "<div class='text-center text-muted h3'>Esperando nuevas guías...</div>";
+            return;
+        }
+
+        visibles.forEach(g => {
+            let textoStatus = "";
+            let claseStatus = "";
+
+            if(g.estado === 'encontrada') {
+                textoStatus = "✅ ¡LISTO, ENCONTRADO!";
+                claseStatus = "bg-listo";
+            } else if(g.estado === 'buscando') {
+                textoStatus = "🔍 BUSCANDO...";
+                claseStatus = "bg-buscando";
+            } else {
+                textoStatus = "⏳ EN FILA";
+                claseStatus = "bg-fila";
+            }
+
+            contenedor.innerHTML += `
+                <div class="guia-card status-${g.estado}">
+                    <div class="guia-numero">${g.numero_guia}</div>
+                    <div class="status-texto ${claseStatus}">${textoStatus}</div>
+                </div>`;
+        });
+    }
+</script>
+</body>
+</html>

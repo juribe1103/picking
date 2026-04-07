@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cargador Pro - Calle 30</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { background-color: #f8f9fa; padding-top: 50px; font-family: 'Segoe UI', sans-serif; }
+        .card-upload { border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .upload-zone { border: 2px dashed #0d6efd; border-radius: 15px; padding: 30px; background: #fdfdfd; }
+        #log { font-family: monospace; font-size: 0.85rem; background: #212529; color: #0dfd0d; padding: 15px; border-radius: 10px; height: 150px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card card-upload p-4">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-primary">📦 CARGA DE INVENTARIO 9450</h3>
+                    <p class="text-muted">Gestión de ubicación, contenido y peso</p>
+                </div>
+
+                <div class="alert alert-warning d-flex align-items-center justify-content-between">
+                    <span>Usa la plantilla oficial para evitar errores de carga.</span>
+                    <button class="btn btn-dark btn-sm fw-bold" onclick="descargarPlantilla()">
+                        📥 DESCARGAR PLANTILLA
+                    </button>
+                </div>
+
+                <div class="upload-zone text-center mb-4">
+                    <input type="file" id="inputExcel" class="form-control mb-3" accept=".xlsx, .xls">
+                    <button class="btn btn-primary btn-lg w-100 fw-bold shadow" id="btnProcesar" disabled>🚀 ACTUALIZAR BODEGA</button>
+                </div>
+
+                <div id="progresoArea" style="display:none;" class="mb-4">
+                    <div class="progress" style="height: 25px; border-radius: 10px;">
+                        <div id="barra" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%">0%</div>
+                    </div>
+                </div>
+
+                <div id="log">Esperando archivo...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    /* --- BLOQUE 0: IDENTIDAD Y VARIABLES GLOBALES --- */
+    const firebaseConfig = {
+        apiKey: "AIzaSyBzM3A6yc1nj858w9MWhIAz3b4T5QqtauQ",
+        authDomain: "picking-inter.firebaseapp.com",
+        projectId: "picking-inter",
+        storageBucket: "picking-inter.firebasestorage.app",
+        messagingSenderId: "444247400767",
+        appId: "1:444247400767:web:04c7e6beed0b55d158b38a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let datosExcel = [];
+
+    /* --- BLOQUE 6.2: FUNCIÓN DE PERSISTENCIA (PLANTILLA) --- */
+    window.descargarPlantilla = () => {
+        const headers = [["guia", "ubicacion", "contenido", "peso (kg)"]];
+        const ws = XLSX.utils.aoa_to_sheet(headers);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+        XLSX.writeFile(wb, "Plantilla_Inventario_9450.xlsx");
+    };
+
+    /* --- BLOQUE 6.1: FUNCIÓN DE INTERACCIÓN (LECTURA) --- */
+    document.getElementById('inputExcel').addEventListener('change', (e) => {
+        const reader = new FileReader();
+        const log = document.getElementById('log');
+        reader.onload = (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                // Leemos la primera hoja
+                datosExcel = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                if (datosExcel.length > 0) {
+                    log.innerHTML = `✅ Archivo leído. <br>📊 Registros encontrados: ${datosExcel.length}`;
+                    document.getElementById('btnProcesar').disabled = false;
+                } else {
+                    log.innerHTML = `⚠️ El archivo está vacío o no tiene el formato correcto.`;
+                }
+            } catch (err) {
+                log.innerHTML = `❌ Error al leer Excel: ${err.message}`;
+            }
+        };
+        reader.readAsArrayBuffer(e.target.files[0]);
+    });
+
+    /* --- SUB-BLOQUE 6.3: PROCESAMIENTO QUIRÚRGICO (CORREGIDO) --- */
+    document.getElementById('btnProcesar').onclick = async () => {
+        const btn = document.getElementById('btnProcesar');
+        const log = document.getElementById('log');
+        const barra = document.getElementById('barra');
+        
+        btn.disabled = true;
+        document.getElementById('progresoArea').style.display = 'block';
+        log.innerHTML = "⏳ Iniciando carga masiva...";
+
+        try {
+            // Procesamos por lotes de 500 (límite de Firebase)
+            for (let i = 0; i < datosExcel.length; i += 500) {
+                const batch = writeBatch(db);
+                const chunk = datosExcel.slice(i, i + 500);
+
+                chunk.forEach(filaRaw => {
+                    // 1. Normalizamos las llaves (evita fallos por mayúsculas o espacios)
+                    const fila = Object.keys(filaRaw).reduce((acc, key) => {
+                        acc[key.toLowerCase().trim()] = filaRaw[key];
+                        return acc;
+                    }, {});
+
+                    // 2. Validamos que exista el dato clave (guia)
+                    if (fila.guia) {
+                        const idDoc = String(fila.guia).trim();
+                        const docRef = doc(db, "inventario_9450", idDoc);
+                        
+                        batch.set(docRef, {
+                            guia: idDoc,
+                            ubicacion: String(fila.ubicacion || "SIN UBICACION").toUpperCase(),
+                            contenido: String(fila.contenido || "No especificado"),
+                            peso: String(fila['peso (kg)'] || fila.peso || "0"),
+                            fechaCarga: new Date(),
+                            source: "Carga Masiva Web"
+                        });
+                    }
+                });
+
+                // 3. Ejecutamos el lote
+                await batch.commit();
+
+                // 4. Actualizamos UI
+                let progresoActual = Math.min(i + 500, datosExcel.length);
+                let porc = Math.round((progresoActual / datosExcel.length) * 100);
+                
+                barra.style.width = porc + "%";
+                barra.innerText = porc + "%";
+                log.innerHTML += `<br>📤 Lote procesado: ${progresoActual} de ${datosExcel.length}`;
+                log.scrollTop = log.scrollHeight;
+            }
+
+            log.innerHTML += `<br><br>✅ **¡PROCESO COMPLETADO EXITOSAMENTE!**`;
+            alert("Inventario actualizado en la base de datos.");
+
+        } catch (error) {
+            console.error("Error crítico:", error);
+            log.innerHTML += `<br>❌ **ERROR CRÍTICO:** ${error.message}`;
+            alert("El proceso se detuvo. Revisa el log para más detalles.");
+        } finally {
+            btn.disabled = false;
+        }
+    };
+</script>
+</body>
+</html>

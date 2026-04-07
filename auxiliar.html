@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auxiliar: Picking Calle 30</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+        .header-aux { background-color: #ffc107; padding: 10px; font-weight: bold; }
+        
+        .mini-card { border-radius: 8px; padding: 5px 15px; color: white; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .bg-enc { background: #198754; } .bg-bus { background: #fd7e14; } .bg-por { background: #0d6efd; }
+        .valor-mini { font-weight: 700; font-size: 1.1rem; }
+
+        .seccion-busqueda { background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .input-lupa { font-size: 1.3rem; font-weight: bold; border: 2px solid #0d6efd; border-radius: 30px; }
+
+        /* TARJETA SLIM */
+        .card-guia { border-left: 10px solid #0d6efd; border-radius: 12px; margin-bottom: 8px; transition: 0.3s; background: white; overflow: hidden; }
+        .card-buscando { border-left-color: #fd7e14 !important; background-color: #fff9f4; }
+        .alerta-critica { background-color: #fa9b9b !important; border-left-color: #dc3545 !important; }
+        
+        .guia-numero { font-size: 1.4rem; font-weight: 600; color: #2c3e50; }
+        .tiempo-reloj { font-family: 'Courier New', monospace; font-weight: 700; color: #dc3545; font-size: 1rem; }
+        
+        /* FRANJA DE INFORMACIÓN COMPACTA */
+        .detalle-inv-slim { 
+            background: #f8f9fa; 
+            border-top: 1px solid #eee; 
+            padding: 4px 12px; 
+            font-size: 0.85rem; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+            color: #555;
+        }
+        .ubicacion-texto { color: #0d6efd; font-weight: 800; }
+        .separador { margin: 0 8px; color: #ccc; }
+
+        .tabla-scroll { max-height: 500px; overflow-y: auto; background: white; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="header-aux shadow-sm d-flex justify-content-between align-items-center px-3">
+    <span>📦 PUNTO CALLE 30 - AUXILIAR</span>
+    <div class="d-flex gap-2">
+        <div class="mini-card bg-enc">LISTO: <span id="countEncontradas" class="valor-mini">0</span></div>
+        <div class="mini-card bg-bus">BUSCANDO: <span id="countBuscando" class="valor-mini">0</span></div>
+        <div class="mini-card bg-por">PENDIENTE: <span id="countPorBuscar" class="valor-mini">0</span></div>
+    </div>
+</div>
+
+<div class="container-fluid mt-3">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="seccion-busqueda">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">🔍</span>
+                    <input type="text" id="buscadorGuia" class="form-control input-lupa border-start-0" placeholder="Escanear para filtrar guía..." autofocus>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <h5 class="mb-3 text-secondary">📋 Cola de Trabajo</h5>
+            <div id="contenedorGuias"></div>
+        </div>
+
+        <div class="col-md-5">
+            <h5 class="mb-3 text-secondary">✔️ Historial</h5>
+            <div class="tabla-scroll shadow-sm p-2">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Guía</th><th>Tiempo</th><th>Estado</th></tr>
+                    </thead>
+                    <tbody id="tablaEncontradas"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, where, orderBy, updateDoc, doc, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBzM3A6yc1nj858w9MWhIAz3b4T5QqtauQ",
+        authDomain: "picking-inter.firebaseapp.com",
+        projectId: "picking-inter",
+        storageBucket: "picking-inter.firebasestorage.app",
+        messagingSenderId: "444247400767",
+        appId: "1:444247400767:web:04c7e6beed0b55d158b38a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const guiasRef = collection(db, "guias");
+
+    let todasLasGuias = [];
+    let filtroBusqueda = "";
+    const cacheInventario = {}; 
+
+    onSnapshot(query(guiasRef, where("archivado", "==", false), orderBy("creadoEn", "asc")), (snapshot) => {
+        todasLasGuias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        todasLasGuias.forEach(g => {
+            if (g.estado !== 'encontrada' && !cacheInventario[g.numero_guia]) fetchInventario(g.numero_guia);
+        });
+        renderizar();
+    });
+
+    const inputBuscador = document.getElementById('buscadorGuia');
+    inputBuscador.addEventListener('input', (e) => {
+        filtroBusqueda = e.target.value.trim();
+        renderizar();
+    });
+
+    async function renderizar() {
+        const contenedor = document.getElementById('contenedorGuias');
+        const tabla = document.getElementById('tablaEncontradas');
+        let enc = 0, bus = 0, por = 0;
+        let htmlPendientes = ""; let htmlTabla = "";
+
+        todasLasGuias.forEach(g => {
+            if (g.estado === 'encontrada') {
+                enc++;
+                const fin = g.finBusqueda ? g.finBusqueda.seconds : Date.now()/1000;
+                const m = Math.floor((fin - g.creadoEn.seconds) / 60);
+                htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td>✅</td></tr>`;
+            } else {
+                if (filtroBusqueda !== "" && !g.numero_guia.includes(filtroBusqueda)) return;
+                if (g.estado === 'buscando') bus++; else por++;
+
+                const ahora = Math.floor(Date.now() / 1000);
+                const diffSeg = ahora - g.creadoEn.seconds;
+                const min = Math.floor(diffSeg / 60);
+                const seg = diffSeg % 60;
+                
+                htmlPendientes += `
+                    <div class="card card-guia shadow-sm ${min >= 30 ? 'alerta-critica' : ''} ${g.estado === 'buscando' ? 'card-buscando' : ''}">
+                        <div class="card-body p-0">
+                            <div class="d-flex justify-content-between align-items-center px-3 py-1">
+                                <div>
+                                    <span class="guia-numero">#${g.numero_guia}</span>
+                                    <span class="ms-2 tiempo-reloj">${min}:${seg.toString().padStart(2, '0')}</span>
+                                </div>
+                                <button class="btn ${g.estado === 'buscando' ? 'btn-success' : 'btn-dark'} btn-sm fw-bold px-3" 
+                                        onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}')">
+                                    ${g.estado === 'buscando' ? 'TERMINAR' : 'INICIAR'}
+                                </button>
+                            </div>
+                            <div class="detalle-inv-slim">
+                                ${cacheInventario[g.numero_guia] || '🔍 Buscando...'}
+                            </div>
+                        </div>
+                    </div>`;
+            }
+        });
+
+        contenedor.innerHTML = htmlPendientes;
+        tabla.innerHTML = htmlTabla;
+        document.getElementById('countEncontradas').innerText = enc;
+        document.getElementById('countBuscando').innerText = bus;
+        document.getElementById('countPorBuscar').innerText = por;
+    }
+
+    async function fetchInventario(numGuia) {
+        if (cacheInventario[numGuia]) return;
+        cacheInventario[numGuia] = "Cargando...";
+        try {
+            const invDoc = await getDoc(doc(db, "inventario_9450", String(numGuia)));
+            if (invDoc.exists()) {
+                const d = invDoc.data();
+                cacheInventario[numGuia] = `📍 <span class="ubicacion-texto">${d.ubicacion || '---'}</span> <span class="separador">|</span> ⚖️ ${d.peso || '-'}kg <span class="separador">|</span> 📦 ${d.contenido || ''}`;
+            } else {
+                cacheInventario[numGuia] = `⚠️ No registrado en inventario`;
+            }
+            renderizar();
+        } catch (e) { cacheInventario[numGuia] = null; }
+    }
+
+    window.actualizarEstado = async (id, nuevoEstado) => {
+        if (nuevoEstado === 'encontrada') {
+            document.getElementById('buscadorGuia').value = "";
+            filtroBusqueda = "";
+        }
+        await updateDoc(doc(db, "guias", id), { 
+            estado: nuevoEstado, 
+            ...(nuevoEstado === 'encontrada' && { finBusqueda: serverTimestamp() })
+        });
+    };
+
+    setInterval(renderizar, 1000);
+</script>
+</body>
+</html>

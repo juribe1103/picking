@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atención Digital - Calle 30</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; height: 100vh; display: flex; flex-direction: column; font-family: 'Segoe UI', sans-serif; }
+        .header { background: #0056b3; color: white; padding: 18px; text-align: center; font-weight: bold; font-size: 1.1rem; border-bottom: 4px solid #ffc107; }
+        
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 1rem; position: relative; animation: fadeIn 0.3s ease; line-height: 1.4; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .bot { background: white; align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); color: #333; border: 1px solid #e0e0e0; }
+        .user { background: #0056b3; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        
+        .input-area { background: white; padding: 20px; border-top: 1px solid #dee2e6; display: flex; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        
+        .estado-pildora { font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; display: block; color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="header shadow-sm">
+    📍 PUNTO - CALLE 30
+</div>
+
+<div id="chat-box">
+    </div>
+
+<div class="input-area">
+    <input type="text" id="userInput" class="form-control" placeholder="Escribe tu número de guía..." autocomplete="off">
+    <button class="btn btn-primary fw-bold" id="btnSend">ENVIAR</button>
+</div>
+
+<audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBzM3A6yc1nj858w9MWhIAz3b4T5QqtauQ",
+        authDomain: "picking-inter.firebaseapp.com",
+        projectId: "picking-inter",
+        storageBucket: "picking-inter.firebasestorage.app",
+        messagingSenderId: "444247400767",
+        appId: "1:444247400767:web:04c7e6beed0b55d158b38a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const guiasRef = collection(db, "guias");
+
+    const chatBox = document.getElementById('chat-box');
+    const input = document.getElementById('userInput');
+    const btn = document.getElementById('btnSend');
+    const sound = document.getElementById('notifSound');
+
+    let estadoAnterior = "";
+
+    function mostrarMsg(texto, tipo) {
+        const d = document.createElement('div');
+        d.className = `msg ${tipo}`;
+        d.innerHTML = texto;
+        chatBox.appendChild(d);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function playNotif() {
+        sound.play().catch(e => console.log("Audio requiere interacción previa"));
+    }
+
+    // Inicio del bot
+    window.onload = () => {
+        setTimeout(() => {
+            mostrarMsg("👋 ¡Hola! Bienvenido al punto de atención Calle 30.", 'bot');
+            setTimeout(() => {
+                mostrarMsg("Para solicitar tu paquete, por favor <b>escribe el número de guía</b> completo.", 'bot');
+            }, 800);
+        }, 500);
+    };
+
+    async function manejarEnvio() {
+        const numero = input.value.trim();
+        
+        // Validar formato de guía (solo números)
+        if (!/^\d{7,20}$/.test(numero)) {
+            mostrarMsg(numero || "...", 'user');
+            mostrarMsg("⚠️ Por favor ingresa un número de guía válido (solo números).", 'bot');
+            input.value = "";
+            return;
+        }
+
+        mostrarMsg(numero, 'user');
+        input.value = "";
+        input.disabled = true;
+        btn.disabled = true;
+
+        try {
+            // Verificar si la guía ya está activa en el sistema
+            const q = query(guiasRef, where("numero_guia", "==", numero), where("archivado", "==", false));
+            const snapshot = await getDocs(q);
+
+            if (!snapshot.empty) {
+                mostrarMsg("🔎 Esta guía ya está en nuestra lista. Te avisaremos por aquí cuando cambie su estado.", 'bot');
+                activarSeguimiento(snapshot.docs[0].id);
+                return;
+            }
+
+            // Registrar nueva guía
+            const docRef = await addDoc(guiasRef, {
+                numero_guia: numero,
+                estado: "pendiente",
+                creadoEn: serverTimestamp(),
+                archivado: false,
+                zona: "ZONA JESUS",
+                origen: "Chatbot-QR"
+            });
+
+            mostrarMsg("✅ <b>¡Guía registrada!</b> Ya le avisamos al equipo de bodega. Mantente atento a este chat.", 'bot');
+            activarSeguimiento(docRef.id);
+
+        } catch (error) {
+            mostrarMsg("❌ Error de conexión. Inténtalo de nuevo.", 'bot');
+            input.disabled = false;
+            btn.disabled = false;
+        }
+    }
+
+    function activarSeguimiento(idDoc) {
+        // Escucha en tiempo real cambios en este documento
+        onSnapshot(doc(db, "guias", idDoc), (docSnap) => {
+            if (!docSnap.exists()) return;
+            const data = docSnap.data();
+
+            // Si el auxiliar cambia el estado en su panel...
+            if (data.estado !== estadoAnterior) {
+                
+                if (data.estado === "buscando") {
+                    playNotif();
+                    mostrarMsg("<span class='estado-pildora'>Actualización</span>🏃‍♂️ ¡Buenas noticias! Un auxiliar ya está buscando tu paquete en bodega.", 'bot');
+                } 
+                
+                if (data.estado === "encontrada") {
+                    playNotif();
+                    mostrarMsg("<span class='estado-pildora'>Actualización</span>📦 ¡Paquete encontrado! Ya va hacia la ventanilla de entrega.", 'bot');
+                }
+
+                estadoAnterior = data.estado;
+            }
+        });
+    }
+
+    btn.onclick = manejarEnvio;
+    input.onkeypress = (e) => { if(e.key === "Enter") manejarEnvio(); };
+</script>
+</body>
+</html>
