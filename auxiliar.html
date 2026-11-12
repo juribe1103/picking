@@ -3,73 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auxiliar: Picking Calle 30</title>
+    <title>Auxiliar: Picking Calle 30 | Inter Rapidísimo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
-        .header-aux { background-color: #ffc107; padding: 10px; font-weight: bold; }
-        
-        .mini-card { border-radius: 8px; padding: 5px 15px; color: white; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
-        .bg-enc { background: #198754; } .bg-bus { background: #fd7e14; } .bg-por { background: #0d6efd; }
-        .valor-mini { font-weight: 700; font-size: 1.1rem; }
+        :root {
+            --inter-black: #0a0a0a;
+            --inter-dark: #161616;
+            --inter-card: #1e1e1e;
+            --inter-border: #2e2e2e;
+            --inter-orange: #ff6600;
+            --inter-gray: #9ca3af;
+            --inter-white: #ffffff;
+        }
 
-        .seccion-busqueda { background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .input-lupa { font-size: 1.3rem; font-weight: bold; border: 2px solid #0d6efd; border-radius: 30px; }
+        body { 
+            background-color: var(--inter-black); 
+            color: var(--inter-white);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+        }
 
-        /* TARJETA SLIM */
-        .card-guia { border-left: 10px solid #0d6efd; border-radius: 12px; margin-bottom: 8px; transition: 0.3s; background: white; overflow: hidden; }
-        .card-buscando { border-left-color: #fd7e14 !important; background-color: #fff9f4; }
-        .alerta-critica { background-color: #fa9b9b !important; border-left-color: #dc3545 !important; }
+        /* HEADER MINIMALISTA CORPORATIVO */
+        .header-aux { 
+            background-color: var(--inter-dark); 
+            border-bottom: 1px solid var(--inter-border);
+            padding: 14px 20px; 
+            font-weight: 600; 
+        }
+        .brand-title {
+            font-size: 1.15rem;
+            letter-spacing: -0.3px;
+            color: var(--inter-white);
+        }
+        .brand-subtitle {
+            color: var(--inter-gray);
+            font-weight: 400;
+        }
+
+        /* PÍLDORA DE SESIÓN */
+        .sesion-pill {
+            background-color: var(--inter-card);
+            border: 1px solid var(--inter-border);
+            color: var(--inter-white);
+            border-radius: 30px;
+            padding: 5px 14px;
+        }
+
+        /* CONTADORES SUPERIORES */
+        .mini-card { 
+            border-radius: 8px; 
+            padding: 6px 14px; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 0.8rem; 
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .bg-enc { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; } 
+        .bg-bus { background: rgba(255, 102, 0, 0.15); border: 1px solid var(--inter-orange); color: #ff8533; } 
+        .bg-por { background: rgba(255, 255, 255, 0.08); border: 1px solid #4b5563; color: #e5e7eb; }
+        .valor-mini { font-weight: 700; font-size: 1.05rem; color: #fff; }
+
+        /* BUSCADOR ESTILO PORTAL INTER RAPIDÍSIMO */
+        .seccion-busqueda { 
+            background: transparent; 
+            padding: 10px 0 25px 0; 
+            margin-bottom: 10px; 
+        }
+        .buscador-wrapper {
+            position: relative;
+            border-bottom: 2px solid #4b5563;
+            transition: border-color 0.3s;
+            display: flex;
+            align-items: center;
+            padding-bottom: 6px;
+        }
+        .buscador-wrapper:focus-within {
+            border-bottom-color: var(--inter-white);
+        }
+        .input-lupa { 
+            background: transparent !important;
+            border: none !important;
+            color: var(--inter-white) !important;
+            font-size: 1.25rem; 
+            font-weight: 500;
+            box-shadow: none !important;
+            padding-left: 5px;
+        }
+        .input-lupa::placeholder {
+            color: var(--inter-gray);
+            font-weight: 400;
+        }
+
+        /* TARJETA SLIM DE GUÍA */
+        .card-guia { 
+            background-color: var(--inter-card); 
+            border: 1px solid var(--inter-border);
+            border-left: 6px solid #6b7280; 
+            border-radius: 10px; 
+            margin-bottom: 10px; 
+            transition: all 0.25s ease; 
+            overflow: hidden; 
+        }
+        .card-guia:hover {
+            border-color: #4b5563;
+        }
+        .card-buscando { 
+            border-left-color: var(--inter-orange) !important; 
+            background-color: #241914; 
+        }
+        .alerta-critica { 
+            background-color: #2b1414 !important; 
+            border-color: #7f1d1d !important;
+            border-left-color: #ef4444 !important; 
+        }
         
-        .guia-numero { font-size: 1.4rem; font-weight: 600; color: #2c3e50; }
-        .tiempo-reloj { font-family: 'Courier New', monospace; font-weight: 700; color: #dc3545; font-size: 1rem; }
+        .guia-numero { font-size: 1.35rem; font-weight: 700; color: var(--inter-white); letter-spacing: 0.5px; }
+        .tiempo-reloj { font-family: 'Courier New', monospace; font-weight: 700; color: #f87171; font-size: 0.95rem; }
         
         /* FRANJA DE INFORMACIÓN COMPACTA */
         .detalle-inv-slim { 
-            background: #f8f9fa; 
-            border-top: 1px solid #eee; 
-            padding: 4px 12px; 
+            background: #121212; 
+            border-top: 1px solid var(--inter-border); 
+            padding: 6px 14px; 
             font-size: 0.85rem; 
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis;
-            color: #555;
+            color: var(--inter-gray);
         }
-        .ubicacion-texto { color: #0d6efd; font-weight: 800; }
-        .separador { margin: 0 8px; color: #ccc; }
+        .ubicacion-texto { color: var(--inter-orange); font-weight: 700; }
+        .separador { margin: 0 10px; color: #3f3f46; }
 
-        .tabla-scroll { max-height: 500px; overflow-y: auto; background: white; border-radius: 8px; }
+        /* BOTONES */
+        .btn-inter-iniciar {
+            background-color: var(--inter-white);
+            color: var(--inter-black);
+            border: none;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+        .btn-inter-iniciar:hover {
+            background-color: var(--inter-orange);
+            color: var(--inter-white);
+        }
+
+        /* TABLA HISTORIAL DARK */
+        .tabla-scroll { 
+            max-height: 500px; 
+            overflow-y: auto; 
+            background: var(--inter-card); 
+            border: 1px solid var(--inter-border);
+            border-radius: 10px; 
+        }
+        .table-inter {
+            color: var(--inter-white);
+            margin-bottom: 0;
+        }
+        .table-inter thead th {
+            background-color: #121212;
+            color: var(--inter-gray);
+            border-bottom: 1px solid var(--inter-border);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .table-inter tbody td {
+            border-bottom: 1px solid var(--inter-border);
+            color: #e5e7eb;
+            vertical-align: middle;
+        }
+        .table-inter tbody tr:hover {
+            background-color: #262626;
+        }
+
+        /* MODAL LOGIN DARK */
+        .modal-content-inter {
+            background-color: var(--inter-dark);
+            border: 1px solid var(--inter-border);
+            color: var(--inter-white);
+        }
+        .modal-header-inter {
+            border-bottom: 1px solid var(--inter-border);
+            background-color: #111111;
+        }
+        .form-control-inter, .form-select-inter {
+            background-color: var(--inter-black);
+            border: 1px solid #3f3f46;
+            color: var(--inter-white);
+        }
+        .form-control-inter:focus, .form-select-inter:focus {
+            background-color: var(--inter-black);
+            border-color: var(--inter-orange);
+            color: var(--inter-white);
+            box-shadow: 0 0 0 0.2rem rgba(255, 102, 0, 0.25);
+        }
+        .section-heading {
+            color: var(--inter-gray);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
     </style>
 </head>
 <body>
 
-<div class="header-aux shadow-sm d-flex justify-content-between align-items-center px-3 flex-wrap gap-2">
-    <span>📦 PUNTO CALLE 30 - AUXILIAR</span>
+<div class="header-aux d-flex justify-content-between align-items-center px-4 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <!-- Ícono minimalista estilo Inter -->
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+        </svg>
+        <span class="brand-title">Inter Rapidísimo <span class="brand-subtitle">| Punto Calle 30</span></span>
+    </div>
     
     <!-- SESIÓN ACTIVA DEL OPERARIO -->
-    <div class="d-flex align-items-center gap-2 bg-white px-3 py-1 rounded shadow-sm">
-        <span style="font-size: 0.85rem;">👷‍♂️ Operario: <strong id="lblOperarioActivo" class="text-primary">---</strong></span>
-        <button class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.75rem;" onclick="cerrarSesion()">Salir</button>
+    <div class="d-flex align-items-center gap-3 sesion-pill">
+        <span style="font-size: 0.85rem; color: #9ca3af;">Operario: <strong id="lblOperarioActivo" class="text-white ms-1">---</strong></span>
+        <button class="btn btn-outline-light btn-sm py-0 px-2" style="font-size: 0.75rem; border-color: #4b5563;" onclick="cerrarSesion()">Salir</button>
     </div>
 
     <div class="d-flex gap-2">
-        <div class="mini-card bg-enc">LISTO: <span id="countEncontradas" class="valor-mini">0</span></div>
-        <div class="mini-card bg-bus">BUSCANDO: <span id="countBuscando" class="valor-mini">0</span></div>
-        <div class="mini-card bg-por">PENDIENTE: <span id="countPorBuscar" class="valor-mini">0</span></div>
+        <div class="mini-card bg-enc">LISTO <span id="countEncontradas" class="valor-mini">0</span></div>
+        <div class="mini-card bg-bus">BUSCANDO <span id="countBuscando" class="valor-mini">0</span></div>
+        <div class="mini-card bg-por">PENDIENTE <span id="countPorBuscar" class="valor-mini">0</span></div>
     </div>
 </div>
 
 <!-- MODAL DE LOGIN SEGURO -->
 <div class="modal fade" id="modalLogin" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title fw-bold">🔐 Identificación de Operario</h5>
+        <div class="modal-content modal-content-inter shadow-lg">
+            <div class="modal-header modal-header-inter">
+                <h5 class="modal-title fw-bold">Ingresar al Sistema <span style="color: var(--inter-orange);">•</span></h5>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Seleccione su Usuario:</label>
-                    <select id="loginUsuario" class="form-select fw-bold text-primary">
+                    <label class="form-label text-secondary small fw-bold text-uppercase">Usuario Operario</label>
+                    <select id="loginUsuario" class="form-select form-select-inter fw-semibold">
                         <option value="">-- Elija su nombre --</option>
                         <option value="Jesus Uribe">Jesus Uribe</option>
                         <option value="Carlos Perez">Carlos Perez</option>
@@ -78,41 +252,44 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Contraseña:</label>
-                    <input type="password" id="loginPassword" class="form-control" placeholder="Ingrese su contraseña">
+                    <label class="form-label text-secondary small fw-bold text-uppercase">Contraseña</label>
+                    <input type="password" id="loginPassword" class="form-control form-control-inter" placeholder="Ingrese su contraseña">
                 </div>
                 <div id="loginError" class="text-danger fw-bold small mb-2 text-center" style="display:none;">⚠️ Contraseña incorrecta</div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-dark w-100 fw-bold py-2" onclick="intentarLogin()">INGRESAR AL SISTEMA</button>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                <button type="button" class="btn w-100 fw-bold py-2" style="background-color: var(--inter-orange); color: white;" onclick="intentarLogin()">INGRESAR</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container-fluid mt-3">
+<div class="container-fluid px-4 mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-10">
+        <div class="col-md-8 col-lg-7">
             <div class="seccion-busqueda">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0">🔍</span>
-                    <input type="text" id="buscadorGuia" class="form-control input-lupa border-start-0" placeholder="Escanear para filtrar guía..." autofocus>
+                <div class="buscador-wrapper">
+                    <input type="text" id="buscadorGuia" class="form-control input-lupa" placeholder="Sigue tu envío; Escanea o ingresa el número de guía..." autofocus>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row g-4">
         <div class="col-md-7">
-            <h5 class="mb-3 text-secondary">📋 Bolsa General de Guías</h5>
+            <h6 class="mb-3 section-heading">Bolsa General de Guías</h6>
             <div id="contenedorGuias"></div>
         </div>
 
         <div class="col-md-5">
-            <h5 class="mb-3 text-secondary">✔️ Mi Historial Personal</h5>
-            <div class="tabla-scroll shadow-sm p-2">
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
+            <h6 class="mb-3 section-heading">Mi Historial Personal</h6>
+            <div class="tabla-scroll p-2">
+                <table class="table table-sm table-inter">
+                    <thead>
                         <tr><th>Guía</th><th>Tiempo</th><th>Estado</th></tr>
                     </thead>
                     <tbody id="tablaEncontradas"></tbody>
@@ -232,7 +409,7 @@
                     enc++;
                     const fin = g.finBusqueda ? g.finBusqueda.seconds : Date.now()/1000;
                     const m = Math.floor((fin - g.creadoEn.seconds) / 60);
-                    htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td>✅</td></tr>`;
+                    htmlTabla += `<tr><td class="fw-bold text-white">#${g.numero_guia}</td><td>${m} min</td><td><span class="badge bg-success bg-opacity-25 text-success border border-success">Listo</span></td></tr>`;
                 }
             } else {
                 if (filtroBusqueda !== "" && !String(g.numero_guia).includes(filtroBusqueda)) return;
@@ -251,13 +428,13 @@
                 const esMia = (operarioGuia !== "" && operarioGuia === usuarioActual);
                 const estaOcupadaPorOtro = (operarioGuia !== "" && operarioGuia !== usuarioActual);
 
-                let badgeHtml = '<span class="badge bg-info text-dark ms-2" style="font-size: 0.7rem;">Libre</span>';
+                let badgeHtml = '<span class="badge ms-2" style="background-color: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; font-size: 0.7rem;">Disponible</span>';
                 if (operarioGuia !== "") {
-                    badgeHtml = `<span class="badge ${esMia ? 'bg-warning text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.7rem;">👷‍♂️ ${operarioGuia}</span>`;
+                    badgeHtml = `<span class="badge ms-2" style="background-color: ${esMia ? 'rgba(255, 102, 0, 0.2)' : '#27272a'}; color: ${esMia ? '#ff8533' : '#9ca3af'}; border: 1px solid ${esMia ? '#ff6600' : '#3f3f46'}; font-size: 0.7rem;">${operarioGuia}</span>`;
                 }
 
                 let btnTexto = 'INICIAR';
-                let btnClase = 'btn-dark';
+                let btnClase = 'btn-inter-iniciar';
                 let disabledAttr = '';
 
                 if (esMia) {
@@ -265,35 +442,35 @@
                     btnClase = 'btn-success';
                 } else if (estaOcupadaPorOtro) {
                     btnTexto = 'EN PROCESO';
-                    btnClase = 'btn-secondary';
+                    btnClase = 'btn-secondary opacity-50';
                     disabledAttr = 'disabled title="Guía en proceso por otro operario"';
                 }
 
                 htmlPendientes += `
-                    <div class="card card-guia shadow-sm ${min >= 30 ? 'alerta-critica' : ''} ${g.estado === 'buscando' ? 'card-buscando' : ''}">
+                    <div class="card card-guia ${min >= 30 ? 'alerta-critica' : ''} ${g.estado === 'buscando' ? 'card-buscando' : ''}">
                         <div class="card-body p-0">
-                            <div class="d-flex justify-content-between align-items-center px-3 py-1">
-                                <div>
+                            <div class="d-flex justify-content-between align-items-center px-3 py-2">
+                                <div class="d-flex align-items-center flex-wrap">
                                     <span class="guia-numero">#${g.numero_guia}</span>
-                                    <span class="ms-2 tiempo-reloj">${min}:${seg.toString().padStart(2, '0')}</span>
+                                    <span class="ms-3 tiempo-reloj">${min}:${seg.toString().padStart(2, '0')}</span>
                                     ${badgeHtml}
                                 </div>
-                                <button class="btn ${btnClase} btn-sm fw-bold px-3" 
+                                <button class="btn ${btnClase} btn-sm fw-bold px-3 py-1" 
                                         ${disabledAttr}
                                         onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}', '${operarioGuia}')">
                                     ${btnTexto}
                                 </button>
                             </div>
                             <div class="detalle-inv-slim">
-                                ${cacheInventario[g.numero_guia] || '🔍 Buscando...'}
+                                ${cacheInventario[g.numero_guia] || 'Buscando en inventario...'}
                             </div>
                         </div>
                     </div>`;
             }
         });
 
-        contenedor.innerHTML = htmlPendientes || '<div class="text-center text-muted py-4">Inicie sesión o no hay guías pendientes.</div>';
-        tabla.innerHTML = htmlTabla || '<tr><td colspan="3" class="text-center text-muted">Sin historial registrado hoy.</td></tr>';
+        contenedor.innerHTML = htmlPendientes || '<div class="text-center text-secondary py-5 border border-secondary border-opacity-25 rounded">Inicie sesión o no hay guías pendientes.</div>';
+        tabla.innerHTML = htmlTabla || '<tr><td colspan="3" class="text-center text-secondary py-3">Sin historial registrado hoy.</td></tr>';
         
         document.getElementById('countEncontradas').innerText = enc;
         document.getElementById('countBuscando').innerText = bus;
@@ -307,7 +484,7 @@
             const invDoc = await getDoc(doc(db, "inventario_9450", String(numGuia)));
             if (invDoc.exists()) {
                 const d = invDoc.data();
-                cacheInventario[numGuia] = `📍 <span class="ubicacion-texto">${d.ubicacion || '---'}</span> <span class="separador">|</span> ⚖️ ${d.peso || '-'}kg <span class="separador">|</span> 📦 ${d.contenido || ''}`;
+                cacheInventario[numGuia] = `UBICACIÓN: <span class="ubicacion-texto">${d.ubicacion || '---'}</span> <span class="separador">|</span> PESO: ${d.peso || '-'}kg <span class="separador">|</span> ${d.contenido || ''}`;
             } else {
                 cacheInventario[numGuia] = `⚠️ No registrado en inventario 9450`;
             }
