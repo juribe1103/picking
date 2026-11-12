@@ -145,7 +145,7 @@
     let todasLasGuias = [];
     let filtroBusqueda = "";
     const cacheInventario = {}; 
-    let operarioActual = null; // Variable global estricta para la sesión activa
+    let operarioActual = null;
 
     const CREDENCIALES_OPERARIOS = {
         "Jesus Uribe": "2026",
@@ -160,7 +160,6 @@
         const modalElement = document.getElementById('modalLogin');
         modalLoginInstance = new bootstrap.Modal(modalElement);
 
-        // Limpieza inicial al abrir la página
         localStorage.removeItem('operario_picking_actual');
         operarioActual = null;
         document.getElementById('lblOperarioActivo').innerText = "---";
@@ -179,7 +178,7 @@
         }
 
         if (CREDENCIALES_OPERARIOS[usuario] && CREDENCIALES_OPERARIOS[usuario] === password) {
-            operarioActual = usuario; // Asignamos la variable global
+            operarioActual = usuario;
             localStorage.setItem('operario_picking_actual', usuario);
             document.getElementById('lblOperarioActivo').innerText = usuario;
             document.getElementById('loginPassword').value = "";
@@ -220,7 +219,6 @@
         const contenedor = document.getElementById('contenedorGuias');
         const tabla = document.getElementById('tablaEncontradas');
 
-        // Sincronizamos con localStorage por seguridad si recarga o renderiza de fondo
         if (!operarioActual) {
             operarioActual = localStorage.getItem('operario_picking_actual');
         }
@@ -246,23 +244,29 @@
                 const min = Math.floor(diffSeg / 60);
                 const seg = diffSeg % 60;
                 
-                // Evaluaciones estrictas usando operarioActual
-                const esMia = (g.operario === operarioActual);
-                const estaOcupadaPorOtro = (g.estado === 'buscando' && g.operario && g.operario !== "" && g.operario !== operarioActual);
+                // VALIDACIONES BLINDADAS DE PROPIEDAD
+                const operarioGuia = (g.operario || "").trim();
+                const usuarioActual = (operarioActual || "").trim();
+                
+                const esMia = (operarioGuia !== "" && operarioGuia === usuarioActual);
+                const estaOcupadaPorOtro = (operarioGuia !== "" && operarioGuia !== usuarioActual);
 
                 let badgeHtml = '<span class="badge bg-info text-dark ms-2" style="font-size: 0.7rem;">Libre</span>';
-                if (g.operario && g.operario !== "") {
-                    badgeHtml = `<span class="badge ${esMia ? 'bg-warning text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.7rem;">👷‍♂️ ${g.operario}</span>`;
+                if (operarioGuia !== "") {
+                    badgeHtml = `<span class="badge ${esMia ? 'bg-warning text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.7rem;">👷‍♂️ ${operarioGuia}</span>`;
                 }
 
                 let btnTexto = 'INICIAR';
                 let btnClase = 'btn-dark';
+                let disabledAttr = '';
+
                 if (esMia) {
                     btnTexto = 'TERMINAR';
                     btnClase = 'btn-success';
                 } else if (estaOcupadaPorOtro) {
                     btnTexto = 'EN PROCESO';
                     btnClase = 'btn-secondary';
+                    disabledAttr = 'disabled title="Guía en proceso por otro operario"';
                 }
 
                 htmlPendientes += `
@@ -275,8 +279,8 @@
                                     ${badgeHtml}
                                 </div>
                                 <button class="btn ${btnClase} btn-sm fw-bold px-3" 
-                                        ${estaOcupadaPorOtro ? 'disabled title="Guía en proceso por otro operario"' : ''}
-                                        onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}', '${g.operario || ''}')">
+                                        ${disabledAttr}
+                                        onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}', '${operarioGuia}')">
                                     ${btnTexto}
                                 </button>
                             </div>
@@ -322,9 +326,12 @@
             return;
         }
 
-        // CANDADO ESTRICTO: Si la guía ya está tomada por otro operario diferente, bloqueamos totalmente
-        if (operarioGuia && operarioGuia !== "" && operarioGuia !== operarioActual) {
-            alert("❌ ACCESO DENEGADO: Esta guía pertenece a otro operario y no puedes modificarla.");
+        const limpioGuia = (operarioGuia || "").trim();
+        const limpioActual = (operarioActual || "").trim();
+
+        // CANDADO DE SEGURIDAD ABSOLUTO
+        if (limpioGuia !== "" && limpioGuia !== limpioActual) {
+            alert("❌ ACCESO DENEGADO: Esta guía pertenece a otro operario (" + limpioGuia + ") y no puedes modificarla.");
             return;
         }
 
@@ -333,10 +340,9 @@
             filtroBusqueda = "";
         }
         
-        // Al actualizar, se asigna rigurosamente el nombre del operarioActual logueado en este dispositivo
         await updateDoc(doc(db, "guias", id), { 
             estado: nuevoEstado, 
-            operario: operarioActual,
+            operario: limpioActual,
             ...(nuevoEstado === 'encontrada' && { finBusqueda: serverTimestamp() })
         });
     };
