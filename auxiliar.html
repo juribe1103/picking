@@ -59,7 +59,7 @@
     </div>
 </div>
 
-<!-- MODAL DE LOGIN SEGURO (OBLIGATORIO AL ABRIR) -->
+<!-- MODAL DE LOGIN SEGURO -->
 <div class="modal fade" id="modalLogin" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow">
@@ -145,6 +145,7 @@
     let todasLasGuias = [];
     let filtroBusqueda = "";
     const cacheInventario = {}; 
+    let operarioActual = null; // Variable global estricta para la sesión activa
 
     const CREDENCIALES_OPERARIOS = {
         "Jesus Uribe": "2026",
@@ -159,8 +160,9 @@
         const modalElement = document.getElementById('modalLogin');
         modalLoginInstance = new bootstrap.Modal(modalElement);
 
-        // OBLIGATORIO: Al abrir la página, limpiamos cualquier sesión anterior para que SIEMPRE pida login
+        // Limpieza inicial al abrir la página
         localStorage.removeItem('operario_picking_actual');
+        operarioActual = null;
         document.getElementById('lblOperarioActivo').innerText = "---";
         modalLoginInstance.show();
     });
@@ -177,12 +179,13 @@
         }
 
         if (CREDENCIALES_OPERARIOS[usuario] && CREDENCIALES_OPERARIOS[usuario] === password) {
+            operarioActual = usuario; // Asignamos la variable global
             localStorage.setItem('operario_picking_actual', usuario);
             document.getElementById('lblOperarioActivo').innerText = usuario;
             document.getElementById('loginPassword').value = "";
             errorDiv.style.display = "none";
             modalLoginInstance.hide();
-            renderizar(); // Actualiza la vista con el usuario autenticado
+            renderizar();
         } else {
             errorDiv.innerText = "⚠️ Contraseña incorrecta";
             errorDiv.style.display = "block";
@@ -190,6 +193,7 @@
     };
 
     window.cerrarSesion = () => {
+        operarioActual = null;
         localStorage.removeItem('operario_picking_actual');
         document.getElementById('loginUsuario').value = "";
         document.getElementById('loginPassword').value = "";
@@ -215,14 +219,17 @@
     async function renderizar() {
         const contenedor = document.getElementById('contenedorGuias');
         const tabla = document.getElementById('tablaEncontradas');
-        const operarioActual = localStorage.getItem('operario_picking_actual');
+
+        // Sincronizamos con localStorage por seguridad si recarga o renderiza de fondo
+        if (!operarioActual) {
+            operarioActual = localStorage.getItem('operario_picking_actual');
+        }
 
         let enc = 0, bus = 0, por = 0;
         let htmlPendientes = ""; let htmlTabla = "";
 
         todasLasGuias.forEach(g => {
             if (g.estado === 'encontrada') {
-                // Historial: Solo cuenta y muestra las que encontró ESTE operario
                 if (g.operario === operarioActual) {
                     enc++;
                     const fin = g.finBusqueda ? g.finBusqueda.seconds : Date.now()/1000;
@@ -230,7 +237,6 @@
                     htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td>✅</td></tr>`;
                 }
             } else {
-                // Filtro por texto en tiempo real
                 if (filtroBusqueda !== "" && !String(g.numero_guia).includes(filtroBusqueda)) return;
 
                 if (g.estado === 'buscando') bus++; else por++;
@@ -240,9 +246,24 @@
                 const min = Math.floor(diffSeg / 60);
                 const seg = diffSeg % 60;
                 
-                // Validaciones de estado y propiedad
+                // Evaluaciones estrictas usando operarioActual
                 const esMia = (g.operario === operarioActual);
-                const estaOcupadaPorOtro = (g.estado === 'buscando' && g.operario && g.operario !== operarioActual);
+                const estaOcupadaPorOtro = (g.estado === 'buscando' && g.operario && g.operario !== "" && g.operario !== operarioActual);
+
+                let badgeHtml = '<span class="badge bg-info text-dark ms-2" style="font-size: 0.7rem;">Libre</span>';
+                if (g.operario && g.operario !== "") {
+                    badgeHtml = `<span class="badge ${esMia ? 'bg-warning text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.7rem;">👷‍♂️ ${g.operario}</span>`;
+                }
+
+                let btnTexto = 'INICIAR';
+                let btnClase = 'btn-dark';
+                if (esMia) {
+                    btnTexto = 'TERMINAR';
+                    btnClase = 'btn-success';
+                } else if (estaOcupadaPorOtro) {
+                    btnTexto = 'EN PROCESO';
+                    btnClase = 'btn-secondary';
+                }
 
                 htmlPendientes += `
                     <div class="card card-guia shadow-sm ${min >= 30 ? 'alerta-critica' : ''} ${g.estado === 'buscando' ? 'card-buscando' : ''}">
@@ -251,12 +272,12 @@
                                 <div>
                                     <span class="guia-numero">#${g.numero_guia}</span>
                                     <span class="ms-2 tiempo-reloj">${min}:${seg.toString().padStart(2, '0')}</span>
-                                    ${g.operario ? `<span class="badge ${esMia ? 'bg-warning text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.7rem;">👷‍♂️ ${g.operario}</span>` : '<span class="badge bg-info text-dark ms-2" style="font-size: 0.7rem;">Libre</span>'}
+                                    ${badgeHtml}
                                 </div>
-                                <button class="btn ${esMia ? 'btn-success' : (g.estado === 'buscando' ? 'btn-secondary' : 'btn-dark')} btn-sm fw-bold px-3" 
+                                <button class="btn ${btnClase} btn-sm fw-bold px-3" 
                                         ${estaOcupadaPorOtro ? 'disabled title="Guía en proceso por otro operario"' : ''}
                                         onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}', '${g.operario || ''}')">
-                                    ${esMia ? 'TERMINAR' : (g.estado === 'buscando' ? 'EN PROCESO' : 'INICIAR')}
+                                    ${btnTexto}
                                 </button>
                             </div>
                             <div class="detalle-inv-slim">
@@ -291,15 +312,17 @@
     }
 
     window.actualizarEstado = async (id, nuevoEstado, operarioGuia) => {
-        const operarioActual = localStorage.getItem('operario_picking_actual');
-        
+        if (!operarioActual) {
+            operarioActual = localStorage.getItem('operario_picking_actual');
+        }
+
         if (!operarioActual) {
             alert("⚠️ Sesión expirada o no iniciada. Por favor inicie sesión.");
             modalLoginInstance.show();
             return;
         }
 
-        // CANDADO ESTRICTO DE SEGURIDAD: Si la guía ya está tomada por otro operario diferente, se bloquea la acción
+        // CANDADO ESTRICTO: Si la guía ya está tomada por otro operario diferente, bloqueamos totalmente
         if (operarioGuia && operarioGuia !== "" && operarioGuia !== operarioActual) {
             alert("❌ ACCESO DENEGADO: Esta guía pertenece a otro operario y no puedes modificarla.");
             return;
@@ -310,6 +333,7 @@
             filtroBusqueda = "";
         }
         
+        // Al actualizar, se asigna rigurosamente el nombre del operarioActual logueado en este dispositivo
         await updateDoc(doc(db, "guias", id), { 
             estado: nuevoEstado, 
             operario: operarioActual,
