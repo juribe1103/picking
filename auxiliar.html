@@ -59,7 +59,7 @@
     </div>
 </div>
 
-<!-- MODAL DE LOGIN SEGURO -->
+<!-- MODAL DE LOGIN SEGURO (OBLIGATORIO AL ABRIR) -->
 <div class="modal fade" id="modalLogin" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content shadow">
@@ -159,12 +159,10 @@
         const modalElement = document.getElementById('modalLogin');
         modalLoginInstance = new bootstrap.Modal(modalElement);
 
-        const operarioGuardado = localStorage.getItem('operario_picking_actual');
-        if (operarioGuardado && CREDENCIALES_OPERARIOS[operarioGuardado]) {
-            document.getElementById('lblOperarioActivo').innerText = operarioGuardado;
-        } else {
-            modalLoginInstance.show();
-        }
+        // OBLIGATORIO: Al abrir la página, limpiamos cualquier sesión anterior para que SIEMPRE pida login
+        localStorage.removeItem('operario_picking_actual');
+        document.getElementById('lblOperarioActivo').innerText = "---";
+        modalLoginInstance.show();
     });
 
     window.intentarLogin = () => {
@@ -184,6 +182,7 @@
             document.getElementById('loginPassword').value = "";
             errorDiv.style.display = "none";
             modalLoginInstance.hide();
+            renderizar(); // Actualiza la vista con el usuario autenticado
         } else {
             errorDiv.innerText = "⚠️ Contraseña incorrecta";
             errorDiv.style.display = "block";
@@ -241,9 +240,9 @@
                 const min = Math.floor(diffSeg / 60);
                 const seg = diffSeg % 60;
                 
-                // Determinamos si la guía ya la tiene otro operario
-                const estaOcupadaPorOtro = (g.estado === 'buscando' && g.operario && g.operario !== operarioActual);
+                // Validaciones de estado y propiedad
                 const esMia = (g.operario === operarioActual);
+                const estaOcupadaPorOtro = (g.estado === 'buscando' && g.operario && g.operario !== operarioActual);
 
                 htmlPendientes += `
                     <div class="card card-guia shadow-sm ${min >= 30 ? 'alerta-critica' : ''} ${g.estado === 'buscando' ? 'card-buscando' : ''}">
@@ -255,7 +254,7 @@
                                     ${g.operario ? `<span class="badge ${esMia ? 'bg-warning text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.7rem;">👷‍♂️ ${g.operario}</span>` : '<span class="badge bg-info text-dark ms-2" style="font-size: 0.7rem;">Libre</span>'}
                                 </div>
                                 <button class="btn ${esMia ? 'btn-success' : (g.estado === 'buscando' ? 'btn-secondary' : 'btn-dark')} btn-sm fw-bold px-3" 
-                                        ${estaOcupadaPorOtro ? 'disabled title="Esta guía la está buscando otro operario"' : ''}
+                                        ${estaOcupadaPorOtro ? 'disabled title="Guía en proceso por otro operario"' : ''}
                                         onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}', '${g.operario || ''}')">
                                     ${esMia ? 'TERMINAR' : (g.estado === 'buscando' ? 'EN PROCESO' : 'INICIAR')}
                                 </button>
@@ -268,7 +267,7 @@
             }
         });
 
-        contenedor.innerHTML = htmlPendientes || '<div class="text-center text-muted py-4">No hay guías pendientes en este momento.</div>';
+        contenedor.innerHTML = htmlPendientes || '<div class="text-center text-muted py-4">Inicie sesión o no hay guías pendientes.</div>';
         tabla.innerHTML = htmlTabla || '<tr><td colspan="3" class="text-center text-muted">Sin historial registrado hoy.</td></tr>';
         
         document.getElementById('countEncontradas').innerText = enc;
@@ -295,14 +294,14 @@
         const operarioActual = localStorage.getItem('operario_picking_actual');
         
         if (!operarioActual) {
-            alert("⚠️ Sesión expirada. Por favor inicie sesión.");
+            alert("⚠️ Sesión expirada o no iniciada. Por favor inicie sesión.");
             modalLoginInstance.show();
             return;
         }
 
-        // Si ya está siendo trabajada por otro, frenamos por seguridad
-        if (operarioGuia && operarioGuia !== "" && operarioGuia !== operarioActual && nuevoEstado === 'encontrada') {
-            alert("❌ ACCESO DENEGADO: Esta guía está siendo procesada por otro operario.");
+        // CANDADO ESTRICTO DE SEGURIDAD: Si la guía ya está tomada por otro operario diferente, se bloquea la acción
+        if (operarioGuia && operarioGuia !== "" && operarioGuia !== operarioActual) {
+            alert("❌ ACCESO DENEGADO: Esta guía pertenece a otro operario y no puedes modificarla.");
             return;
         }
 
@@ -311,7 +310,6 @@
             filtroBusqueda = "";
         }
         
-        // Al dar INICIAR o TERMINAR, la guía se apropia del operario actual
         await updateDoc(doc(db, "guias", id), { 
             estado: nuevoEstado, 
             operario: operarioActual,
