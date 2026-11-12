@@ -104,16 +104,16 @@
 
     <div class="row">
         <div class="col-md-7">
-            <h5 class="mb-3 text-secondary">📋 Cola de Trabajo</h5>
+            <h5 class="mb-3 text-secondary">📋 Mi Cola de Trabajo Asignada</h5>
             <div id="contenedorGuias"></div>
         </div>
 
         <div class="col-md-5">
-            <h5 class="mb-3 text-secondary">✔️ Historial</h5>
+            <h5 class="mb-3 text-secondary">✔️ Mi Historial</h5>
             <div class="tabla-scroll shadow-sm p-2">
                 <table class="table table-sm table-hover mb-0">
                     <thead class="table-light">
-                        <tr><th>Guía</th><th>Tiempo</th><th>Operario</th><th>Estado</th></tr>
+                        <tr><th>Guía</th><th>Tiempo</th><th>Estado</th></tr>
                     </thead>
                     <tbody id="tablaEncontradas"></tbody>
                 </table>
@@ -122,7 +122,7 @@
     </div>
 </div>
 
-<!-- Bootstrap JS Bundle (Necesario para el Modal) -->
+<!-- Bootstrap JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script type="module">
@@ -146,7 +146,6 @@
     let filtroBusqueda = "";
     const cacheInventario = {}; 
 
-    // --- BASE DE CREDENCIALES (ADMINISTRABLE AQUÍ) ---
     const CREDENCIALES_OPERARIOS = {
         "Jesus Uribe": "2026",
         "Carlos Perez": "1234",
@@ -185,6 +184,7 @@
             document.getElementById('loginPassword').value = "";
             errorDiv.style.display = "none";
             modalLoginInstance.hide();
+            location.reload(); // Recarga para aplicar el filtro del nuevo usuario
         } else {
             errorDiv.innerText = "⚠️ Contraseña incorrecta";
             errorDiv.style.display = "block";
@@ -200,7 +200,13 @@
     };
 
     onSnapshot(query(guiasRef, where("archivado", "==", false), orderBy("creadoEn", "asc")), (snapshot) => {
-        todasLasGuias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const operarioActual = localStorage.getItem('operario_picking_actual');
+        
+        // FILTRO ESTRICTO: Solo trae las guías asignadas a este operario
+        todasLasGuias = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(g => g.operario === operarioActual);
+
         todasLasGuias.forEach(g => {
             if (g.estado !== 'encontrada' && !cacheInventario[g.numero_guia]) fetchInventario(g.numero_guia);
         });
@@ -224,8 +230,7 @@
                 enc++;
                 const fin = g.finBusqueda ? g.finBusqueda.seconds : Date.now()/1000;
                 const m = Math.floor((fin - g.creadoEn.seconds) / 60);
-                const op = g.operario || '---';
-                htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td><small class="text-muted">${op}</small></td><td>✅</td></tr>`;
+                htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td>✅</td></tr>`;
             } else {
                 if (filtroBusqueda !== "" && !g.numero_guia.includes(filtroBusqueda)) return;
                 if (g.estado === 'buscando') bus++; else por++;
@@ -242,10 +247,9 @@
                                 <div>
                                     <span class="guia-numero">#${g.numero_guia}</span>
                                     <span class="ms-2 tiempo-reloj">${min}:${seg.toString().padStart(2, '0')}</span>
-                                    ${g.operario ? `<span class="badge bg-secondary ms-2" style="font-size: 0.7rem;">👷‍♂️ ${g.operario}</span>` : ''}
                                 </div>
                                 <button class="btn ${g.estado === 'buscando' ? 'btn-success' : 'btn-dark'} btn-sm fw-bold px-3" 
-                                        onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}')">
+                                        onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}', '${g.operario}')">
                                     ${g.estado === 'buscando' ? 'TERMINAR' : 'INICIAR'}
                                 </button>
                             </div>
@@ -279,11 +283,18 @@
         } catch (e) { cacheInventario[numGuia] = null; }
     }
 
-    window.actualizarEstado = async (id, nuevoEstado) => {
+    window.actualizarEstado = async (id, nuevoEstado, operarioGuia) => {
         const operarioActual = localStorage.getItem('operario_picking_actual');
+        
+        // VALIDACIÓN DE SEGURIDAD EXTRA
         if (!operarioActual) {
-            alert("⚠️ Sesión expirada o no iniciada. Por favor inicie sesión.");
+            alert("⚠️ Sesión expirada. Por favor inicie sesión.");
             modalLoginInstance.show();
+            return;
+        }
+
+        if (operarioGuia !== operarioActual) {
+            alert("❌ ACCESO DENEGADO: Esta guía no está asignada a tu usuario.");
             return;
         }
 
@@ -291,6 +302,7 @@
             document.getElementById('buscadorGuia').value = "";
             filtroBusqueda = "";
         }
+        
         await updateDoc(doc(db, "guias", id), { 
             estado: nuevoEstado, 
             operario: operarioActual,
