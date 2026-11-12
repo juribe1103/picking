@@ -149,7 +149,7 @@
             color: var(--inter-white);
         }
 
-        /* TABLA HISTORIAL DARK */
+        /* TABLA HISTORIAL DARK CORREGIDA */
         .tabla-scroll { 
             max-height: 500px; 
             overflow-y: auto; 
@@ -171,8 +171,9 @@
         }
         .table-inter tbody td {
             border-bottom: 1px solid var(--inter-border);
-            color: #e5e7eb;
+            color: var(--inter-white) !important; /* Forzar color blanco nítido */
             vertical-align: middle;
+            font-weight: 500;
         }
         .table-inter tbody tr:hover {
             background-color: #262626;
@@ -212,7 +213,6 @@
 
 <div class="header-aux d-flex justify-content-between align-items-center px-4 flex-wrap gap-2">
     <div class="d-flex align-items-center gap-2">
-        <!-- Ícono minimalista estilo Inter -->
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M5 12h14"></path>
             <path d="m12 5 7 7-7 7"></path>
@@ -409,7 +409,11 @@
                     enc++;
                     const fin = g.finBusqueda ? g.finBusqueda.seconds : Date.now()/1000;
                     const m = Math.floor((fin - g.creadoEn.seconds) / 60);
-                    htmlTabla += `<tr><td class="fw-bold text-white">#${g.numero_guia}</td><td>${m} min</td><td><span class="badge bg-success bg-opacity-25 text-success border border-success">Listo</span></td></tr>`;
+                    htmlTabla += `<tr>
+                        <td class="fw-bold text-white">#${g.numero_guia}</td>
+                        <td class="text-light">${m} min</td>
+                        <td><span class="badge bg-success bg-opacity-25 text-success border border-success">Listo</span></td>
+                    </tr>`;
                 }
             } else {
                 if (filtroBusqueda !== "" && !String(g.numero_guia).includes(filtroBusqueda)) return;
@@ -421,7 +425,6 @@
                 const min = Math.floor(diffSeg / 60);
                 const seg = diffSeg % 60;
                 
-                // VALIDACIONES BLINDADAS DE PROPIEDAD
                 const operarioGuia = (g.operario || "").trim();
                 const usuarioActual = (operarioActual || "").trim();
                 
@@ -506,7 +509,6 @@
         const limpioGuia = (operarioGuia || "").trim();
         const limpioActual = (operarioActual || "").trim();
 
-        // CANDADO DE SEGURIDAD ABSOLUTO
         if (limpioGuia !== "" && limpioGuia !== limpioActual) {
             alert("❌ ACCESO DENEGADO: Esta guía pertenece a otro operario (" + limpioGuia + ") y no puedes modificarla.");
             return;
