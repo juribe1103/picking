@@ -104,12 +104,12 @@
 
     <div class="row">
         <div class="col-md-7">
-            <h5 class="mb-3 text-secondary">📋 Mi Cola de Trabajo Asignada</h5>
+            <h5 class="mb-3 text-secondary">📋 Bolsa General de Guías</h5>
             <div id="contenedorGuias"></div>
         </div>
 
         <div class="col-md-5">
-            <h5 class="mb-3 text-secondary">✔️ Mi Historial</h5>
+            <h5 class="mb-3 text-secondary">✔️ Mi Historial Personal</h5>
             <div class="tabla-scroll shadow-sm p-2">
                 <table class="table table-sm table-hover mb-0">
                     <thead class="table-light">
@@ -184,7 +184,6 @@
             document.getElementById('loginPassword').value = "";
             errorDiv.style.display = "none";
             modalLoginInstance.hide();
-            location.reload(); // Recarga para aplicar el filtro del nuevo usuario
         } else {
             errorDiv.innerText = "⚠️ Contraseña incorrecta";
             errorDiv.style.display = "block";
@@ -200,12 +199,7 @@
     };
 
     onSnapshot(query(guiasRef, where("archivado", "==", false), orderBy("creadoEn", "asc")), (snapshot) => {
-        const operarioActual = localStorage.getItem('operario_picking_actual');
-        
-        // FILTRO ESTRICTO: Solo trae las guías asignadas a este operario
-        todasLasGuias = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(g => g.operario === operarioActual);
+        todasLasGuias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         todasLasGuias.forEach(g => {
             if (g.estado !== 'encontrada' && !cacheInventario[g.numero_guia]) fetchInventario(g.numero_guia);
@@ -222,24 +216,35 @@
     async function renderizar() {
         const contenedor = document.getElementById('contenedorGuias');
         const tabla = document.getElementById('tablaEncontradas');
+        const operarioActual = localStorage.getItem('operario_picking_actual');
+
         let enc = 0, bus = 0, por = 0;
         let htmlPendientes = ""; let htmlTabla = "";
 
         todasLasGuias.forEach(g => {
             if (g.estado === 'encontrada') {
-                enc++;
-                const fin = g.finBusqueda ? g.finBusqueda.seconds : Date.now()/1000;
-                const m = Math.floor((fin - g.creadoEn.seconds) / 60);
-                htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td>✅</td></tr>`;
+                // Historial: Solo cuenta y muestra las que encontró ESTE operario
+                if (g.operario === operarioActual) {
+                    enc++;
+                    const fin = g.finBusqueda ? g.finBusqueda.seconds : Date.now()/1000;
+                    const m = Math.floor((fin - g.creadoEn.seconds) / 60);
+                    htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td>✅</td></tr>`;
+                }
             } else {
-                if (filtroBusqueda !== "" && !g.numero_guia.includes(filtroBusqueda)) return;
+                // Filtro por texto en tiempo real
+                if (filtroBusqueda !== "" && !String(g.numero_guia).includes(filtroBusqueda)) return;
+
                 if (g.estado === 'buscando') bus++; else por++;
 
                 const ahora = Math.floor(Date.now() / 1000);
-                const diffSeg = ahora - g.creadoEn.seconds;
+                const diffSeg = ahora - (g.creadoEn ? g.creadoEn.seconds : ahora);
                 const min = Math.floor(diffSeg / 60);
                 const seg = diffSeg % 60;
                 
+                // Determinamos si la guía ya la tiene otro operario
+                const estaOcupadaPorOtro = (g.estado === 'buscando' && g.operario && g.operario !== operarioActual);
+                const esMia = (g.operario === operarioActual);
+
                 htmlPendientes += `
                     <div class="card card-guia shadow-sm ${min >= 30 ? 'alerta-critica' : ''} ${g.estado === 'buscando' ? 'card-buscando' : ''}">
                         <div class="card-body p-0">
@@ -247,10 +252,12 @@
                                 <div>
                                     <span class="guia-numero">#${g.numero_guia}</span>
                                     <span class="ms-2 tiempo-reloj">${min}:${seg.toString().padStart(2, '0')}</span>
+                                    ${g.operario ? `<span class="badge ${esMia ? 'bg-warning text-dark' : 'bg-secondary'} ms-2" style="font-size: 0.7rem;">👷‍♂️ ${g.operario}</span>` : '<span class="badge bg-info text-dark ms-2" style="font-size: 0.7rem;">Libre</span>'}
                                 </div>
-                                <button class="btn ${g.estado === 'buscando' ? 'btn-success' : 'btn-dark'} btn-sm fw-bold px-3" 
-                                        onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}', '${g.operario}')">
-                                    ${g.estado === 'buscando' ? 'TERMINAR' : 'INICIAR'}
+                                <button class="btn ${esMia ? 'btn-success' : (g.estado === 'buscando' ? 'btn-secondary' : 'btn-dark')} btn-sm fw-bold px-3" 
+                                        ${estaOcupadaPorOtro ? 'disabled title="Esta guía la está buscando otro operario"' : ''}
+                                        onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}', '${g.operario || ''}')">
+                                    ${esMia ? 'TERMINAR' : (g.estado === 'buscando' ? 'EN PROCESO' : 'INICIAR')}
                                 </button>
                             </div>
                             <div class="detalle-inv-slim">
@@ -261,8 +268,9 @@
             }
         });
 
-        contenedor.innerHTML = htmlPendientes;
-        tabla.innerHTML = htmlTabla;
+        contenedor.innerHTML = htmlPendientes || '<div class="text-center text-muted py-4">No hay guías pendientes en este momento.</div>';
+        tabla.innerHTML = htmlTabla || '<tr><td colspan="3" class="text-center text-muted">Sin historial registrado hoy.</td></tr>';
+        
         document.getElementById('countEncontradas').innerText = enc;
         document.getElementById('countBuscando').innerText = bus;
         document.getElementById('countPorBuscar').innerText = por;
@@ -277,7 +285,7 @@
                 const d = invDoc.data();
                 cacheInventario[numGuia] = `📍 <span class="ubicacion-texto">${d.ubicacion || '---'}</span> <span class="separador">|</span> ⚖️ ${d.peso || '-'}kg <span class="separador">|</span> 📦 ${d.contenido || ''}`;
             } else {
-                cacheInventario[numGuia] = `⚠️ No registrado en inventario`;
+                cacheInventario[numGuia] = `⚠️ No registrado en inventario 9450`;
             }
             renderizar();
         } catch (e) { cacheInventario[numGuia] = null; }
@@ -286,15 +294,15 @@
     window.actualizarEstado = async (id, nuevoEstado, operarioGuia) => {
         const operarioActual = localStorage.getItem('operario_picking_actual');
         
-        // VALIDACIÓN DE SEGURIDAD EXTRA
         if (!operarioActual) {
             alert("⚠️ Sesión expirada. Por favor inicie sesión.");
             modalLoginInstance.show();
             return;
         }
 
-        if (operarioGuia !== operarioActual) {
-            alert("❌ ACCESO DENEGADO: Esta guía no está asignada a tu usuario.");
+        // Si ya está siendo trabajada por otro, frenamos por seguridad
+        if (operarioGuia && operarioGuia !== "" && operarioGuia !== operarioActual && nuevoEstado === 'encontrada') {
+            alert("❌ ACCESO DENEGADO: Esta guía está siendo procesada por otro operario.");
             return;
         }
 
@@ -303,6 +311,7 @@
             filtroBusqueda = "";
         }
         
+        // Al dar INICIAR o TERMINAR, la guía se apropia del operario actual
         await updateDoc(doc(db, "guias", id), { 
             estado: nuevoEstado, 
             operario: operarioActual,
