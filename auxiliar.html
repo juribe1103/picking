@@ -43,12 +43,50 @@
 </head>
 <body>
 
-<div class="header-aux shadow-sm d-flex justify-content-between align-items-center px-3">
+<div class="header-aux shadow-sm d-flex justify-content-between align-items-center px-3 flex-wrap gap-2">
     <span>📦 PUNTO CALLE 30 - AUXILIAR</span>
+    
+    <!-- SESIÓN ACTIVA DEL OPERARIO -->
+    <div class="d-flex align-items-center gap-2 bg-white px-3 py-1 rounded shadow-sm">
+        <span style="font-size: 0.85rem;">👷‍♂️ Operario: <strong id="lblOperarioActivo" class="text-primary">---</strong></span>
+        <button class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.75rem;" onclick="cerrarSesion()">Salir</button>
+    </div>
+
     <div class="d-flex gap-2">
         <div class="mini-card bg-enc">LISTO: <span id="countEncontradas" class="valor-mini">0</span></div>
         <div class="mini-card bg-bus">BUSCANDO: <span id="countBuscando" class="valor-mini">0</span></div>
         <div class="mini-card bg-por">PENDIENTE: <span id="countPorBuscar" class="valor-mini">0</span></div>
+    </div>
+</div>
+
+<!-- MODAL DE LOGIN SEGURO -->
+<div class="modal fade" id="modalLogin" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold">🔐 Identificación de Operario</h5>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Seleccione su Usuario:</label>
+                    <select id="loginUsuario" class="form-select fw-bold text-primary">
+                        <option value="">-- Elija su nombre --</option>
+                        <option value="Jesus Uribe">Jesus Uribe</option>
+                        <option value="Carlos Perez">Carlos Perez</option>
+                        <option value="Ana Gomez">Ana Gomez</option>
+                        <option value="Luis Rodriguez">Luis Rodriguez</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Contraseña:</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="Ingrese su contraseña">
+                </div>
+                <div id="loginError" class="text-danger fw-bold small mb-2 text-center" style="display:none;">⚠️ Contraseña incorrecta</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark w-100 fw-bold py-2" onclick="intentarLogin()">INGRESAR AL SISTEMA</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -75,7 +113,7 @@
             <div class="tabla-scroll shadow-sm p-2">
                 <table class="table table-sm table-hover mb-0">
                     <thead class="table-light">
-                        <tr><th>Guía</th><th>Tiempo</th><th>Estado</th></tr>
+                        <tr><th>Guía</th><th>Tiempo</th><th>Operario</th><th>Estado</th></tr>
                     </thead>
                     <tbody id="tablaEncontradas"></tbody>
                 </table>
@@ -83,6 +121,9 @@
         </div>
     </div>
 </div>
+
+<!-- Bootstrap JS Bundle (Necesario para el Modal) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -104,6 +145,59 @@
     let todasLasGuias = [];
     let filtroBusqueda = "";
     const cacheInventario = {}; 
+
+    // --- BASE DE CREDENCIALES (ADMINISTRABLE AQUÍ) ---
+    const CREDENCIALES_OPERARIOS = {
+        "Jesus Uribe": "2026",
+        "Carlos Perez": "1234",
+        "Ana Gomez": "5678",
+        "Luis Rodriguez": "9999"
+    };
+
+    let modalLoginInstance = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const modalElement = document.getElementById('modalLogin');
+        modalLoginInstance = new bootstrap.Modal(modalElement);
+
+        const operarioGuardado = localStorage.getItem('operario_picking_actual');
+        if (operarioGuardado && CREDENCIALES_OPERARIOS[operarioGuardado]) {
+            document.getElementById('lblOperarioActivo').innerText = operarioGuardado;
+        } else {
+            modalLoginInstance.show();
+        }
+    });
+
+    window.intentarLogin = () => {
+        const usuario = document.getElementById('loginUsuario').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+
+        if (!usuario || !password) {
+            errorDiv.innerText = "⚠️ Seleccione usuario y escriba su contraseña";
+            errorDiv.style.display = "block";
+            return;
+        }
+
+        if (CREDENCIALES_OPERARIOS[usuario] && CREDENCIALES_OPERARIOS[usuario] === password) {
+            localStorage.setItem('operario_picking_actual', usuario);
+            document.getElementById('lblOperarioActivo').innerText = usuario;
+            document.getElementById('loginPassword').value = "";
+            errorDiv.style.display = "none";
+            modalLoginInstance.hide();
+        } else {
+            errorDiv.innerText = "⚠️ Contraseña incorrecta";
+            errorDiv.style.display = "block";
+        }
+    };
+
+    window.cerrarSesion = () => {
+        localStorage.removeItem('operario_picking_actual');
+        document.getElementById('loginUsuario').value = "";
+        document.getElementById('loginPassword').value = "";
+        document.getElementById('lblOperarioActivo').innerText = "---";
+        modalLoginInstance.show();
+    };
 
     onSnapshot(query(guiasRef, where("archivado", "==", false), orderBy("creadoEn", "asc")), (snapshot) => {
         todasLasGuias = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -130,7 +224,8 @@
                 enc++;
                 const fin = g.finBusqueda ? g.finBusqueda.seconds : Date.now()/1000;
                 const m = Math.floor((fin - g.creadoEn.seconds) / 60);
-                htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td>✅</td></tr>`;
+                const op = g.operario || '---';
+                htmlTabla += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${m} min</td><td><small class="text-muted">${op}</small></td><td>✅</td></tr>`;
             } else {
                 if (filtroBusqueda !== "" && !g.numero_guia.includes(filtroBusqueda)) return;
                 if (g.estado === 'buscando') bus++; else por++;
@@ -147,6 +242,7 @@
                                 <div>
                                     <span class="guia-numero">#${g.numero_guia}</span>
                                     <span class="ms-2 tiempo-reloj">${min}:${seg.toString().padStart(2, '0')}</span>
+                                    ${g.operario ? `<span class="badge bg-secondary ms-2" style="font-size: 0.7rem;">👷‍♂️ ${g.operario}</span>` : ''}
                                 </div>
                                 <button class="btn ${g.estado === 'buscando' ? 'btn-success' : 'btn-dark'} btn-sm fw-bold px-3" 
                                         onclick="actualizarEstado('${g.id}', '${g.estado === 'buscando' ? 'encontrada' : 'buscando'}')">
@@ -184,12 +280,20 @@
     }
 
     window.actualizarEstado = async (id, nuevoEstado) => {
+        const operarioActual = localStorage.getItem('operario_picking_actual');
+        if (!operarioActual) {
+            alert("⚠️ Sesión expirada o no iniciada. Por favor inicie sesión.");
+            modalLoginInstance.show();
+            return;
+        }
+
         if (nuevoEstado === 'encontrada') {
             document.getElementById('buscadorGuia').value = "";
             filtroBusqueda = "";
         }
         await updateDoc(doc(db, "guias", id), { 
             estado: nuevoEstado, 
+            operario: operarioActual,
             ...(nuevoEstado === 'encontrada' && { finBusqueda: serverTimestamp() })
         });
     };
