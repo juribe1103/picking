@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor General: Control Calle 30 | Inter Rapidísimo</title>
+    <title>Monitor Clientes - Calle 30 | Inter Rapidísimo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         :root {
             --inter-black: #0a0a0a;
@@ -19,172 +18,120 @@
 
         body { 
             background-color: var(--inter-black); 
-            color: var(--inter-white);
+            color: var(--inter-white); 
+            overflow: hidden; 
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            height: 100vh; 
+            margin: 0; 
         }
 
-        /* NAVBAR CORPORATIVO INTER */
-        .navbar { 
-            background-color: var(--inter-dark) !important; 
-            border-bottom: 2px solid var(--inter-orange); 
+        /* HEADER CORPORATIVO INTER */
+        .header-monitor { 
+            background-color: var(--inter-dark); 
+            padding: 14px 30px; 
+            text-align: left; 
+            border-bottom: 3px solid var(--inter-orange); 
+            height: 75px; 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .brand-title {
-            font-size: 1.25rem;
+            font-size: 1.4rem;
             letter-spacing: -0.3px;
             color: var(--inter-white);
-            font-weight: 600;
+            font-weight: 700;
+            margin: 0;
         }
+
         .brand-subtitle {
             color: var(--inter-gray);
             font-weight: 400;
+            font-size: 1.1rem;
         }
-
-        /* RESUMEN / CONTADORES */
-        .resumen-monitor { 
-            font-weight: bold; 
-            border-radius: 10px; 
-            padding: 16px; 
-            color: white; 
-            text-align: center; 
-            border: 1px solid var(--inter-border);
-        }
-        .bg-espera { background-color: rgba(13, 110, 253, 0.15); border-color: #0d6efd; color: #60a5fa; }
-        .bg-ruta { background-color: rgba(255, 102, 0, 0.15); border-color: var(--inter-orange); color: #ff8533; }
-        .bg-exito { background-color: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #34d399; }
-
-        /* TARJETAS DE GUÍAS EN MONITOR */
-        .card-guia { 
-            border-radius: 10px; 
-            transition: 0.3s; 
-            margin-bottom: 10px; 
-            border: 1px solid var(--inter-border);
-            border-left: 6px solid #0d6efd; 
-            background: var(--inter-card); 
-            position: relative; 
-            overflow: hidden;
-        }
-        .card-buscando { border-left-color: var(--inter-orange) !important; background-color: #241914; }
-        .alerta-critica { background-color: #2b1414 !important; border-color: #7f1d1d !important; border-left-color: #ef4444 !important; }
-
-        .tiempo-badge { font-family: 'Courier New', monospace; font-weight: 900; font-size: 1.2rem; color: #f87171; }
         
-        .detalle-inventario-monitor {
-            background-color: #121212;
-            border-top: 1px solid var(--inter-border);
-            padding: 8px 14px;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--inter-gray);
+        .contenedor-principal { 
+            height: calc(100vh - 75px); 
+            padding: 15px 50px 30px 50px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            box-sizing: border-box;
         }
-        .ubicacion-highlight { color: var(--inter-orange); font-weight: 800; }
-        .separador { margin: 0 8px; color: #3f3f46; }
 
-        /* TABLA HISTORIAL DARK */
-        .historial-tabla { 
+        .guia-card { 
             background: var(--inter-card); 
-            border-radius: 10px; 
-            overflow: hidden; 
+            padding: 0 40px; 
+            border-radius: 12px; 
             border: 1px solid var(--inter-border);
+            border-left: 16px solid; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            height: 18%; 
+            margin-bottom: 5px;
+            animation: fadeIn 0.8s ease;
         }
-        .table-inter {
-            color: var(--inter-white);
-            margin-bottom: 0;
+
+        /* ESTADOS CON LA PALETA INTER */
+        .status-pendiente { border-left-color: #0d6efd; }
+        .status-buscando { border-left-color: var(--inter-orange); background: #241914; }
+        .status-encontrada { border-left-color: #10b981; background: #0f291e; }
+        
+        .guia-numero { font-size: 3.5rem; font-weight: 900; color: #fff; letter-spacing: 1px; }
+        .status-texto { font-size: 1.8rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+        
+        /* COLORES DE TEXTO DE ESTADO */
+        .bg-listo { color: #34d399; }
+        .bg-buscando { color: #ff8533; }
+        .bg-fila { color: #60a5fa; }
+
+        .indicador-paginas { 
+            position: absolute; 
+            top: 20px; 
+            right: 40px; 
+            font-size: 1rem; 
+            color: var(--inter-orange); 
+            font-weight: bold; 
+            z-index: 10; 
+            background: rgba(255, 102, 0, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 102, 0, 0.3);
         }
-        .table-inter thead th {
-            background-color: #121212;
-            color: var(--inter-gray);
-            border-bottom: 1px solid var(--inter-border);
-            font-weight: 600;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-        }
-        .table-inter tbody td {
-            border-bottom: 1px solid var(--inter-border);
-            color: var(--inter-white) !important;
-            vertical-align: middle;
-            font-weight: 500;
-            background-color: transparent !important;
-        }
-        .table-inter tbody tr:hover {
-            background-color: #262626 !important;
-        }
-        .section-heading {
-            color: var(--inter-gray);
-            font-size: 1rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark mb-4 shadow">
-    <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ff6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14"></path>
-                <path d="m12 5 7 7-7 7"></path>
-            </svg>
-            <span class="brand-title">Inter Rapidísimo <span class="brand-subtitle">| Monitor General Calle 30</span></span>
-        </div>
-        <div class="text-secondary small fw-bold">
-            <i class="bi bi-broadcast text-success"></i> EN VIVO DESDE BODEGA
-        </div>
+<div class="header-monitor shadow-sm">
+    <div class="brand-container">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ff6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+        </svg>
+        <h1 class="brand-title">Inter Rapidísimo <span class="brand-subtitle">| Estado de tu Pedido - Calle 30</span></h1>
     </div>
-</nav>
+</div>
 
-<div class="container-fluid px-4">
-    <!-- CONTADORES SUPERIORES -->
-    <div class="row mb-4 g-3">
-        <div class="col-md-4">
-            <div class="resumen-monitor bg-espera shadow-sm">
-                <div class="small text-uppercase tracking-wider">Órdenes en Fila / Pendientes</div>
-                <div class="h1 mb-0 fw-bold" id="dashPendientes">0</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="resumen-monitor bg-ruta shadow-sm">
-                <div class="small text-uppercase tracking-wider">Órdenes en Proceso (Buscando)</div>
-                <div class="h1 mb-0 fw-bold" id="dashBuscando">0</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="resumen-monitor bg-exito shadow-sm">
-                <div class="small text-uppercase tracking-wider">Órdenes Listas (Completadas)</div>
-                <div class="h1 mb-0 fw-bold" id="dashListas">0</div>
-            </div>
-        </div>
-    </div>
+<div id="indicadorPagina" class="indicador-paginas"></div>
 
-    <!-- CONTENIDO PRINCIPAL EN TIEMPO REAL -->
-    <div class="row g-4">
-        <div class="col-md-7">
-            <h6 class="mb-3 section-heading"><i class="bi bi-display"></i> Estado Actual de Operación</h6>
-            <div id="listaTareasMonitor">
-                <p class="text-secondary">Cargando flujo de trabajo...</p>
-            </div>
-        </div>
-
-        <div class="col-md-5">
-            <h6 class="mb-3 section-heading"><i class="bi bi-check2-all"></i> Historial de Órdenes Listas</h6>
-            <div class="historial-tabla">
-                <table class="table table-sm table-inter mb-0">
-                    <thead>
-                        <tr><th>Guía</th><th>Operario</th><th>Tiempo</th><th>Estado</th></tr>
-                    </thead>
-                    <tbody id="tablaHistorialMonitor"></tbody>
-                </table>
-            </div>
-        </div>
+<div class="contenedor-principal">
+    <div id="listaUnica" style="height: 100%; display: flex; flex-direction: column; justify-content: space-around;">
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, where, doc, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBzM3A6yc1nj858w9MWhIAz3b4T5QqtauQ",
@@ -197,105 +144,106 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const guiasRef = collection(db, "guias");
 
+    const MAX_FILAS = 5; 
     let todasLasGuias = [];
-    const cacheInventario = {};
+    let paginaActual = 0;
 
-    // Escucha en tiempo real de las guías activas de la zona
-    onSnapshot(query(guiasRef, where("archivado", "==", false), orderBy("creadoEn", "asc")), (snapshot) => {
-        todasLasGuias = [];
-        snapshot.forEach(d => {
-            const data = { id: d.id, ...d.data() };
-            if (data.zona === "ZONA JESUS") {
-                todasLasGuias.push(data);
-                if (data.estado !== 'encontrada' && !cacheInventario[data.numero_guia]) {
-                    fetchInventario(data.numero_guia);
-                }
+    // Cambiar de página cada 8 segundos
+    setInterval(() => {
+        const totalPaginas = Math.ceil(todasLasGuias.length / MAX_FILAS);
+        if (totalPaginas > 1) {
+            paginaActual = (paginaActual + 1) % totalPaginas;
+            renderizar();
+        }
+    }, 8000);
+
+    // Revisar cada minuto si hay guías que deben ocultarse por tiempo
+    setInterval(() => {
+        renderizar();
+    }, 60000);
+
+    const q = query(collection(db, "guias"), where("archivado", "==", false));
+
+    onSnapshot(q, (snapshot) => {
+        const temp = [];
+        const ahora = new Date();
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // LÓGICA DE FILTRADO:
+            if (data.estado === 'encontrada' && data.finBusqueda) {
+                const fin = new Date(data.finBusqueda.seconds * 1000);
+                const diffMs = ahora - fin;
+                const diffMin = Math.floor(diffMs / 60000);
+
+                // Si tiene más de 30 minutos de finalizada, NO la agregamos al monitor
+                if (diffMin >= 30) return; 
             }
+            
+            temp.push(data);
         });
-        renderizarMonitor();
+
+        // Ordenar por prioridad de estado
+        temp.sort((a, b) => {
+            const peso = { 'encontrada': 1, 'buscando': 2, 'pendiente': 3 };
+            return peso[a.estado] - peso[b.estado];
+        });
+
+        todasLasGuias = temp;
+        if (paginaActual >= Math.ceil(todasLasGuias.length / MAX_FILAS)) paginaActual = 0;
+        renderizar();
     });
 
-    async function fetchInventario(numGuia) {
-        if (!numGuia || cacheInventario[numGuia]) return;
-        try {
-            const docRef = doc(db, "inventario_9450", String(numGuia).trim());
-            const invDoc = await getDoc(docRef);
-            if (invDoc.exists()) {
-                const d = invDoc.data();
-                cacheInventario[numGuia] = `UBICACIÓN: <span class="ubicacion-highlight">${d.ubicacion || '---'}</span> <span class="separador">|</span> PESO: ${d.peso || '-'}kg <span class="separador">|</span> ${d.contenido || ''}`;
-            } else {
-                cacheInventario[numGuia] = `⚠️ No registrado en inventario 9450`;
+    function renderizar() {
+        const contenedor = document.getElementById('listaUnica');
+        const indicador = document.getElementById('indicadorPagina');
+        contenedor.innerHTML = "";
+
+        // Volvemos a filtrar en el render por si acaso el tiempo pasó mientras no hubo cambios en DB
+        const ahora = new Date();
+        const guiasFiltradas = todasLasGuias.filter(g => {
+            if (g.estado === 'encontrada' && g.finBusqueda) {
+                const fin = new Date(g.finBusqueda.seconds * 1000);
+                return (ahora - fin) / 60000 < 30;
             }
-            renderizarMonitor();
-        } catch (e) { cacheInventario[numGuia] = "Error de carga"; }
-    }
-
-    function renderizarMonitor() {
-        const contenedor = document.getElementById('listaTareasMonitor');
-        const tabla = document.getElementById('tablaHistorialMonitor');
-        let p = 0, b = 0, e = 0;
-        
-        contenedor.innerHTML = ""; 
-        tabla.innerHTML = "";
-
-        todasLasGuias.forEach(g => {
-            const ahora = new Date();
-            const inicio = g.creadoEn ? new Date(g.creadoEn.seconds * 1000) : ahora;
-
-            if (g.estado !== "encontrada") {
-                if (g.estado === "pendiente") p++; else b++;
-                const diffMs = ahora - inicio;
-                const m = Math.floor(diffMs / 60000);
-                const s = Math.floor((diffMs % 60000) / 1000);
-
-                let badgeEstado = g.estado === 'buscando' ? 
-                    `<span class="badge ms-2" style="background-color: rgba(255, 102, 0, 0.2); color: #ff8533; border: 1px solid #ff6600; font-size: 0.75rem;">EN PROCESO (${g.operario || 'Asignado'})</span>` : 
-                    '<span class="badge ms-2" style="background-color: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; font-size: 0.75rem;">PENDIENTE / LIBRE</span>';
-
-                contenedor.innerHTML += `
-                    <div class="card card-guia shadow-sm ${m >= 20 ? 'alerta-critica' : ''} ${g.estado === 'buscando' ? 'card-buscando' : ''}">
-                        <div class="card-body p-0">
-                            <div class="d-flex justify-content-between align-items-center px-3 py-3">
-                                <div class="d-flex align-items-center flex-wrap gap-2">
-                                    <h4 class="mb-0 text-white fw-bold">#${g.numero_guia}</h4>
-                                    ${badgeEstado}
-                                </div>
-                                <div class="tiempo-badge">${m}:${s.toString().padStart(2, '0')}</div>
-                            </div>
-                            <div class="detalle-inventario-monitor">
-                                ${cacheInventario[g.numero_guia] || 'Buscando en inventario...'}
-                            </div>
-                        </div>
-                    </div>`;
-            } else {
-                e++;
-                const fin = g.finBusqueda ? new Date(g.finBusqueda.seconds * 1000) : inicio;
-                const totalSeg = Math.floor((fin - inicio) / 1000);
-                tabla.innerHTML += `<tr>
-                    <td class="fw-bold text-white">#${g.numero_guia}</td>
-                    <td class="text-light small">${g.operario || '---'}</td>
-                    <td>${Math.floor(totalSeg/60)}m ${totalSeg%60}s</td>
-                    <td><span class="badge bg-success bg-opacity-25 text-success border border-success">LISTO</span></td>
-                </tr>`;
-            }
+            return true;
         });
 
-        document.getElementById('dashPendientes').innerText = p;
-        document.getElementById('dashBuscando').innerText = b;
-        document.getElementById('dashListas').innerText = e;
+        const totalPaginas = Math.ceil(guiasFiltradas.length / MAX_FILAS);
+        const inicio = paginaActual * MAX_FILAS;
+        const visibles = guiasFiltradas.slice(inicio, inicio + MAX_FILAS);
 
-        if (p === 0 && b === 0) {
-            contenedor.innerHTML = '<div class="text-center text-secondary py-5 border border-secondary border-opacity-25 rounded">No hay guías pendientes o en proceso en este momento.</div>';
+        indicador.innerText = totalPaginas > 1 ? `PÁGINA ${paginaActual + 1} DE ${totalPaginas}` : "";
+
+        if (visibles.length === 0) {
+            contenedor.innerHTML = "<div class='text-center text-secondary h3'>Esperando nuevas guías...</div>";
+            return;
         }
-        if (e === 0) {
-            tabla.innerHTML = '<tr><td colspan="4" class="text-center text-secondary py-3">Sin órdenes completadas aún.</td></tr>';
-        }
+
+        visibles.forEach(g => {
+            let textoStatus = "";
+            let claseStatus = "";
+
+            if(g.estado === 'encontrada') {
+                textoStatus = "✅ ¡LISTO, ENCONTRADO!";
+                claseStatus = "bg-listo";
+            } else if(g.estado === 'buscando') {
+                textoStatus = "🔍 BUSCANDO...";
+                claseStatus = "bg-buscando";
+            } else {
+                textoStatus = "⏳ EN FILA";
+                claseStatus = "bg-fila";
+            }
+
+            contenedor.innerHTML += `
+                <div class="guia-card status-${g.estado}">
+                    <div class="guia-numero">${g.numero_guia}</div>
+                    <div class="status-texto ${claseStatus}">${textoStatus}</div>
+                </div>`;
+        });
     }
-
-    // Actualiza el cronómetro en pantalla cada segundo de forma fluida
-    setInterval(renderizarMonitor, 1000);
 </script>
 </body>
 </html>
