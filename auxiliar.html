@@ -149,7 +149,7 @@
             color: var(--inter-white);
         }
 
-        /* TABLA HISTORIAL DARK CORREGIDA */
+       /* TABLA HISTORIAL DARK CORREGIDA */
         .tabla-scroll { 
             max-height: 500px; 
             overflow-y: auto; 
@@ -169,16 +169,20 @@
             font-size: 0.85rem;
             text-transform: uppercase;
         }
+        /* AQUÍ ESTÁ EL CAMBIO CLAVE PARA EL FONDO Y COLOR DE LAS FILAS */
+        .table-inter tbody tr {
+            background-color: var(--inter-card) !important; /* Fondo oscuro para las filas */
+        }
         .table-inter tbody td {
             border-bottom: 1px solid var(--inter-border);
-            color: var(--inter-white) !important; /* Forzar color blanco nítido */
+            color: var(--inter-white) !important; /* Texto blanco nítido */
             vertical-align: middle;
             font-weight: 500;
+            background-color: transparent !important; /* Evita que Bootstrap pinte de blanco */
         }
         .table-inter tbody tr:hover {
-            background-color: #262626;
+            background-color: #262626 !important; /* Color al pasar el cursor */
         }
-
         /* MODAL LOGIN DARK */
         .modal-content-inter {
             background-color: var(--inter-dark);
