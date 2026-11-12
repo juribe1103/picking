@@ -3,43 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recepcionista: Control Calle 30</title>
+    <title>Recepcionista: Control Calle 30 | Inter Rapidísimo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
-        .navbar { background-color: #0056b3; border-bottom: 4px solid #ffc107; }
-        
-        .resumen-recep { font-weight: bold; border-radius: 8px; padding: 10px; color: white; text-align: center; }
-        .bg-espera { background-color: #0d6efd; }
-        .bg-ruta { background-color: #fd7e14; }
-        .bg-exito { background-color: #198754; }
+        :root {
+            --inter-black: #0a0a0a;
+            --inter-dark: #161616;
+            --inter-card: #1e1e1e;
+            --inter-border: #2e2e2e;
+            --inter-orange: #ff6600;
+            --inter-gray: #9ca3af;
+            --inter-white: #ffffff;
+        }
 
-        .card-guia { border-radius: 12px; transition: 0.3s; margin-bottom: 8px; border-left: 8px solid #0d6efd; background: white; position: relative; }
-        .card-buscando { border-left-color: #fd7e14 !important; }
-        .alerta-critica { background-color: #ffdddd !important; border-color: #dc3545 !important; }
+        body { 
+            background-color: var(--inter-black); 
+            color: var(--inter-white);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+        }
 
-        /* Mejora Chatbot */
-        .badge-chatbot { background-color: #0056b3; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 800; vertical-align: middle; margin-left: 5px; border: 1px solid #ffc107; }
-        .animar-entrada { animation: flash-blue 1.5s infinite; }
-        @keyframes flash-blue { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        /* NAVBAR CORPORATIVO INTER */
+        .navbar { 
+            background-color: var(--inter-dark) !important; 
+            border-bottom: 2px solid var(--inter-orange); 
+        }
+        .brand-title {
+            font-size: 1.15rem;
+            letter-spacing: -0.3px;
+            color: var(--inter-white);
+            font-weight: 600;
+        }
+        .brand-subtitle {
+            color: var(--inter-gray);
+            font-weight: 400;
+        }
 
-        .tiempo-badge { font-family: 'Courier New', monospace; font-weight: 900; font-size: 1.1rem; color: #dc3545; }
+        /* RESUMEN / CONTADORES */
+        .resumen-recep { 
+            font-weight: bold; 
+            border-radius: 10px; 
+            padding: 14px; 
+            color: white; 
+            text-align: center; 
+            border: 1px solid var(--inter-border);
+        }
+        .bg-espera { background-color: rgba(13, 110, 253, 0.15); border-color: #0d6efd; color: #60a5fa; }
+        .bg-ruta { background-color: rgba(255, 102, 0, 0.15); border-color: var(--inter-orange); color: #ff8533; }
+        .bg-exito { background-color: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #34d399; }
+
+        /* TARJETAS DE GUÍAS */
+        .card-guia { 
+            border-radius: 10px; 
+            transition: 0.3s; 
+            margin-bottom: 10px; 
+            border: 1px solid var(--inter-border);
+            border-left: 6px solid #0d6efd; 
+            background: var(--inter-card); 
+            position: relative; 
+            overflow: hidden;
+        }
+        .card-buscando { border-left-color: var(--inter-orange) !important; background-color: #241914; }
+        .alerta-critica { background-color: #2b1414 !important; border-color: #7f1d1d !important; border-left-color: #ef4444 !important; }
+
+        /* MEJORA CHATBOT */
+        .badge-chatbot { background-color: var(--inter-orange); color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 800; vertical-align: middle; margin-left: 5px; }
+        .animar-entrada { animation: flash-orange 1.5s infinite; }
+        @keyframes flash-orange { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        .tiempo-badge { font-family: 'Courier New', monospace; font-weight: 900; font-size: 1.1rem; color: #f87171; }
         
         .detalle-inventario-recep {
-            background-color: #f8f9fa;
-            border-top: 1px solid #eee;
-            padding: 4px 10px;
-            font-size: 0.82rem;
+            background-color: #121212;
+            border-top: 1px solid var(--inter-border);
+            padding: 6px 14px;
+            font-size: 0.85rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            color: #555;
+            color: var(--inter-gray);
         }
-        .ubicacion-highlight { color: #0056b3; font-weight: 800; }
-        .separador { margin: 0 6px; color: #ccc; }
+        .ubicacion-highlight { color: var(--inter-orange); font-weight: 800; }
+        .separador { margin: 0 8px; color: #3f3f46; }
 
-        .historial-tabla { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        /* TABLA HISTORIAL DARK */
+        .historial-tabla { 
+            background: var(--inter-card); 
+            border-radius: 10px; 
+            overflow: hidden; 
+            border: 1px solid var(--inter-border);
+        }
+        .table-inter {
+            color: var(--inter-white);
+            margin-bottom: 0;
+        }
+        .table-inter thead th {
+            background-color: #121212;
+            color: var(--inter-gray);
+            border-bottom: 1px solid var(--inter-border);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .table-inter tbody td {
+            border-bottom: 1px solid var(--inter-border);
+            color: var(--inter-white) !important;
+            vertical-align: middle;
+            font-weight: 500;
+            background-color: transparent !important;
+        }
+        .table-inter tbody tr:hover {
+            background-color: #262626 !important;
+        }
+
+        /* FORMULARIOS Y TARJETAS CONTAINER */
+        .card-panel {
+            background-color: var(--inter-card);
+            border: 1px solid var(--inter-border);
+            border-radius: 10px;
+            color: var(--inter-white);
+        }
+        .form-control-inter {
+            background-color: var(--inter-black);
+            border: 1px solid #3f3f46;
+            color: var(--inter-white);
+        }
+        .form-control-inter:focus {
+            background-color: var(--inter-black);
+            border-color: var(--inter-orange);
+            color: var(--inter-white);
+            box-shadow: 0 0 0 0.2rem rgba(255, 102, 0, 0.25);
+        }
+        .section-heading {
+            color: var(--inter-gray);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
     </style>
 </head>
 <body>
@@ -47,10 +148,16 @@
 <audio id="audioNotificacion" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
 <nav class="navbar navbar-dark mb-4 shadow">
-    <div class="container d-flex justify-content-between">
-        <span class="navbar-brand mb-0 h1">🚀 PUNTO CALLE 30 - RECEPCIONISTA</span>
+    <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff6600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="m12 5 7 7-7 7"></path>
+            </svg>
+            <span class="brand-title">Inter Rapidísimo <span class="brand-subtitle">| Recepcionista Calle 30</span></span>
+        </div>
         <div>
-            <button class="btn btn-sm btn-light fw-bold me-2" onclick="activarPermisos()">🔔 ACTIVAR ALERTAS</button>
+            <button class="btn btn-sm btn-outline-light fw-bold me-2" style="border-color: #4b5563;" onclick="activarPermisos()">🔔 ACTIVAR ALERTAS</button>
             <button class="btn btn-sm btn-danger fw-bold" onclick="cierreDeTurnoOperativo()">
                 <i class="bi bi-lock-fill"></i> CIERRE DE TURNO
             </button>
@@ -59,53 +166,53 @@
 </nav>
 
 <div class="container-fluid px-4">
-    <div class="row mb-4">
+    <div class="row mb-4 g-3">
         <div class="col-md-3">
-            <div class="card p-3 shadow-sm border-0">
-                <label class="form-label fw-bold">1. ESCANEAR NUEVA GUÍA</label>
+            <div class="card card-panel p-3 shadow-sm">
+                <label class="form-label text-secondary small fw-bold text-uppercase">1. Escanear Nueva Guía</label>
                 <div class="input-group">
-                    <input type="text" id="guiaInput" class="form-control form-control-lg border-primary" placeholder="Número de guía..." autofocus>
-                    <button class="btn btn-primary" id="btnAsignar">ASIGNAR</button>
+                    <input type="text" id="guiaInput" class="form-control form-control-inter" placeholder="Número de guía..." autofocus>
+                    <button class="btn fw-bold px-3" style="background-color: var(--inter-orange); color: white;" id="btnAsignar">ASIGNAR</button>
                 </div>
                 <div id="statusMsg" class="mt-2 text-center" style="min-height: 30px;"></div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="resumen-recep bg-espera shadow-sm">
-                <div class="small">EN FILA</div>
+                <div class="small text-uppercase tracking-wider">En Fila</div>
                 <div class="h2 mb-0" id="dashPendientes">0</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="resumen-recep bg-ruta shadow-sm">
-                <div class="small">BUSCANDO</div>
+                <div class="small text-uppercase tracking-wider">Buscando</div>
                 <div class="h2 mb-0" id="dashBuscando">0</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="resumen-recep bg-exito shadow-sm">
-                <div class="small">LISTAS</div>
+                <div class="small text-uppercase tracking-wider">Listas</div>
                 <div class="h2 mb-0" id="dashListas">0</div>
             </div>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row g-4">
         <div class="col-md-7">
-            <h5 class="mb-3 text-secondary"><i class="bi bi-clock-history"></i> Flujo en Tiempo Real</h5>
+            <h6 class="mb-3 section-heading"><i class="bi bi-clock-history"></i> Flujo en Tiempo Real</h6>
             <div id="listaTareas">
-                <p class="text-muted">Cargando...</p>
+                <p class="text-secondary">Cargando...</p>
             </div>
         </div>
 
         <div class="col-md-5">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="text-secondary"><i class="bi bi-check-all"></i> Gestión de Hoy</h5>
+                <h6 class="section-heading mb-0"><i class="bi bi-check-all"></i> Gestión de Hoy</h6>
                 <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportarExcel()">📊 EXCEL</button>
             </div>
             <div class="historial-tabla">
-                <table class="table table-hover mb-0" id="tablaExcel">
-                    <thead class="table-dark text-white">
+                <table class="table table-sm table-inter mb-0" id="tablaExcel">
+                    <thead>
                         <tr><th>Guía</th><th>Tiempo</th><th>Estado</th></tr>
                     </thead>
                     <tbody id="tablaHistorial"></tbody>
@@ -180,20 +287,18 @@
             });
             statusMsg.innerHTML = `<div class="text-success fw-bold">✅ #${numero} Asignada</div>`;
             inputGuia.value = ""; inputGuia.focus();
-        } catch (e) { statusMsg.innerHTML = `❌ Error`; }
+        } catch (e) { statusMsg.innerHTML = `<div class="text-danger fw-bold">❌ Error</div>`; }
     }
 
-    /* --- BLOQUE 3: LECTURA EN TIEMPO REAL (CIRUGÍA: QUITAMOS FILTRO RÍGIDO) --- */
+    /* --- BLOQUE 3: LECTURA EN TIEMPO REAL --- */
     onSnapshot(query(guiasRef, where("archivado", "==", false)), (snapshot) => {
         todasLasGuias = [];
         snapshot.forEach(d => {
             const data = {id: d.id, ...d.data()};
-            // Solo mostramos las que pertenecen a esta zona
             if (data.zona === "ZONA JESUS") {
                 todasLasGuias.push(data);
                 if (data.estado !== 'encontrada' && !cacheInventario[data.numero_guia]) fetchInventario(data.numero_guia);
                 
-                // Alerta para Chatbot (QR)
                 const esChatbot = data.origen && data.origen.toLowerCase().includes("qr");
                 if (!primeraCarga && esChatbot && data.estado === "pendiente" && !guiasNotificadas.has(data.id)) {
                     ejecutarAlerta(data.numero_guia);
@@ -207,7 +312,7 @@
         renderizar();
     });
 
-    /* --- BLOQUE 4: BÚSQUEDA EN INVENTARIO (CIRUGÍA: MATCH CON ID DE CARGA) --- */
+    /* --- BLOQUE 4: BÚSQUEDA EN INVENTARIO --- */
     async function fetchInventario(numGuia) {
         if (!numGuia || cacheInventario[numGuia]) return;
         try {
@@ -215,7 +320,7 @@
             const invDoc = await getDoc(docRef);
             if (invDoc.exists()) {
                 const d = invDoc.data();
-                cacheInventario[numGuia] = `📍 <span class="ubicacion-highlight">${d.ubicacion}</span> <span class="separador">|</span> ⚖️ ${d.peso} <span class="separador">|</span> 📦 ${d.contenido}`;
+                cacheInventario[numGuia] = `UBICACIÓN: <span class="ubicacion-highlight">${d.ubicacion}</span> <span class="separador">|</span> PESO: ${d.peso} <span class="separador">|</span> ${d.contenido}`;
             } else {
                 cacheInventario[numGuia] = `⚠️ No registrado en Excel 9450`;
             }
@@ -223,7 +328,7 @@
         } catch (e) { cacheInventario[numGuia] = "Error carga"; }
     }
 
-    /* --- BLOQUE 5: VISTAS (TODO IGUAL) --- */
+    /* --- BLOQUE 5: VISTAS --- */
     function renderizar() {
         const lista = document.getElementById('listaTareas');
         const tabla = document.getElementById('tablaHistorial');
@@ -244,25 +349,33 @@
                 const m = Math.floor(diffMs / 60000);
                 const s = Math.floor((diffMs % 60000) / 1000);
                 
+                let badgeEstado = g.estado === 'buscando' ? 
+                    '<span class="badge ms-2" style="background-color: rgba(255, 102, 0, 0.2); color: #ff8533; border: 1px solid #ff6600; font-size: 0.7rem;">BUSCANDO</span>' : 
+                    '<span class="badge ms-2" style="background-color: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; font-size: 0.7rem;">PENDIENTE</span>';
+
                 lista.innerHTML += `
                     <div class="card card-guia shadow-sm ${m >= 20 ? 'alerta-critica' : ''} ${g.estado === 'buscando' ? 'card-buscando' : ''} ${esChatbot && g.estado==='pendiente' ? 'animar-entrada' : ''}">
                         <div class="card-body p-0">
                             <div class="d-flex justify-content-between align-items-center px-3 py-2">
-                                <div>
-                                    <h5 class="mb-0 d-inline-block me-1">#${g.numero_guia}</h5>
+                                <div class="d-flex align-items-center">
+                                    <h5 class="mb-0 text-white me-1">#${g.numero_guia}</h5>
                                     ${esChatbot ? '<span class="badge-chatbot">Chatbot</span>' : ''}
-                                    <span class="badge ${g.estado === 'buscando' ? 'bg-warning text-dark' : 'bg-primary'}" style="font-size:0.7rem;">${g.estado.toUpperCase()}</span>
+                                    ${badgeEstado}
                                 </div>
                                 <div class="tiempo-badge">${m}:${s.toString().padStart(2, '0')}</div>
                             </div>
-                            <div class="detalle-inventario-recep">${cacheInventario[g.numero_guia] || '🔍 Buscando...'}</div>
+                            <div class="detalle-inventario-recep">${cacheInventario[g.numero_guia] || 'Buscando en inventario...'}</div>
                         </div>
                     </div>`;
             } else {
                 e++;
                 const fin = g.finBusqueda ? new Date(g.finBusqueda.seconds * 1000) : inicio;
                 const totalSeg = Math.floor((fin - inicio) / 1000);
-                tabla.innerHTML += `<tr><td class="fw-bold">#${g.numero_guia}</td><td>${Math.floor(totalSeg/60)}m ${totalSeg%60}s</td><td><span class="badge bg-success">LISTO</span></td></tr>`;
+                tabla.innerHTML += `<tr>
+                    <td class="fw-bold text-white">#${g.numero_guia}</td>
+                    <td class="text-light">${Math.floor(totalSeg/60)}m ${totalSeg%60}s</td>
+                    <td><span class="badge bg-success bg-opacity-25 text-success border border-success">LISTO</span></td>
+                </tr>`;
             }
         });
         document.getElementById('dashPendientes').innerText = p;
